@@ -1,194 +1,308 @@
 {% extends "admin/base_site.html" %}
-{% load i18n %}
+{% load i18n static %}
+
+{% block extrahead %}
+{{ block.super }}
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script>
+    tailwind.config = {
+        darkMode: "class",
+        theme: {
+            extend: {
+                colors: {
+                    "primary": "#1152d4",
+                    "secondary": "#4f46e5",
+                    "sidebar": "#0f1729",
+                    "background-light": "#f6f6f8",
+                    "background-dark": "#101622",
+                },
+                fontFamily: {
+                    "display": ["Inter", "sans-serif"],
+                    "sans": ["Inter", "sans-serif"]
+                },
+                borderRadius: {
+                    "DEFAULT": "0.5rem", // 8px
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+                },
+            },
+        },
+    }
+</script>
+<style>
+    /* Custom Scrollbar for better UX within containers */
+    .custom-scrollbar::-webkit-scrollbar {
+        width: 6px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-track {
+        background: #0f1729;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+        background: #1e293b;
+        border-radius: 3px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+        background: #334155;
+    }
+</style>
+{% endblock %}
 
 {% block content %}
-<div class="py-8">
+<div class="flex-1 flex flex-col h-full overflow-hidden font-display text-slate-900 antialiased">
+    <!-- Main Content Area -->
+    <main class="flex-1 overflow-y-auto bg-background-light p-8">
+        <div class="max-w-7xl mx-auto space-y-8">
+            <!-- Welcome Banner -->
+            <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                <div>
+                    <div class="flex items-center gap-3 mb-1">
+                        <h1 class="text-2xl font-bold text-slate-900">Bem-vindo, {{ request.user.first_name|default:request.user.username }}</h1>
+                        <span class="px-2.5 py-0.5 rounded-full bg-secondary/10 text-secondary text-xs font-semibold border border-secondary/20">{{ request.user.get_role_display|default:"Staff" }}</span>
+                    </div>
+                    <p class="text-slate-500">Aqui está o que está acontecendo nos seus portais hoje.</p>
+                </div>
+                <!-- Quick Actions -->
+                <div class="flex items-center gap-3">
+                    <a href="{% url 'admin:hiring_application_changelist' %}" class="flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 text-slate-700 rounded hover:bg-slate-50 hover:border-slate-300 transition-all text-sm font-medium shadow-sm">
+                        <span class="material-symbols-outlined text-[18px]">description</span>
+                        Ver Candidaturas
+                    </a>
+                    <a href="{% url 'admin:news_article_add' %}" class="flex items-center gap-2 px-4 py-2 bg-primary text-white rounded hover:bg-primary/90 transition-all text-sm font-medium shadow-md shadow-primary/20">
+                        <span class="material-symbols-outlined text-[18px]">edit_square</span>
+                        Novo Artigo
+                    </a>
+                </div>
+            </div>
 
-    <!-- Boas-vindas -->
-    <div
-        class="mb-8 p-6 bg-white dark:bg-gray-900 rounded-xl border border-gray-100 dark:border-gray-800 shadow-sm flex items-center justify-between">
-        <div>
-            <h1 class="text-2xl font-bold text-gray-900 dark:text-white">
-                {% blocktrans with name=request.user.get_full_name|default:request.user.username %}Bem-vindo, {{ name
-                }}{% endblocktrans %}
-            </h1>
-            <p class="text-sm text-gray-500 mt-1">
-                {% trans "Painel de controle — Kelly Sys" %}
-            </p>
-        </div>
-        <span
-            class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">
-            {{ request.user.get_role_display|default:"Staff" }}
-        </span>
-    </div>
+            <!-- Two-Column Stats Grid -->
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+                <!-- Column 1: School Portal Stats (Left, Smaller) -->
+                <div class="lg:col-span-4 space-y-4">
+                    <div class="flex items-center gap-2 mb-2">
+                        <span class="material-symbols-outlined text-primary">school</span>
+                        <h2 class="text-sm font-bold text-slate-900 uppercase tracking-wider">Portal Escolar</h2>
+                    </div>
+                    <div class="grid grid-cols-1 gap-4">
+                        <!-- Card 1 -->
+                        <a href="{% url 'admin:hiring_jobposting_changelist' %}?status=open" class="bg-white p-5 rounded border border-slate-200 shadow-sm flex items-center justify-between hover:border-primary/30 transition-colors cursor-pointer group">
+                            <div>
+                                <p class="text-sm text-slate-500 font-medium">Vagas Abertas</p>
+                                <p class="text-2xl font-bold text-slate-900 mt-1">{{ open_jobs }}</p>
+                            </div>
+                            <div class="size-10 rounded-full bg-primary/10 flex items-center justify-center text-primary group-hover:bg-primary group-hover:text-white transition-colors">
+                                <span class="material-symbols-outlined">chair</span>
+                            </div>
+                        </a>
+                        <!-- Card 2 -->
+                        <a href="{% url 'admin:hiring_application_changelist' %}?status=pending" class="bg-white p-5 rounded border border-slate-200 shadow-sm flex items-center justify-between hover:border-primary/30 transition-colors cursor-pointer group">
+                            <div>
+                                <p class="text-sm text-slate-500 font-medium">Novas Candidaturas</p>
+                                <p class="text-2xl font-bold text-slate-900 mt-1">{{ pending_applications }}</p>
+                            </div>
+                            <div class="size-10 rounded-full bg-primary/10 flex items-center justify-center text-primary group-hover:bg-primary group-hover:text-white transition-colors">
+                                <span class="material-symbols-outlined">person_add</span>
+                            </div>
+                        </a>
+                        <!-- Card 3 -->
+                        <a href="{% url 'admin:contact_contactinquiry_changelist' %}?status=new" class="bg-white p-5 rounded border border-slate-200 shadow-sm flex items-center justify-between hover:border-primary/30 transition-colors cursor-pointer group">
+                            <div>
+                                <p class="text-sm text-slate-500 font-medium">Mensagens</p>
+                                <p class="text-2xl font-bold text-slate-900 mt-1">{{ unread_messages }}</p>
+                            </div>
+                            <div class="size-10 rounded-full bg-primary/10 flex items-center justify-center text-primary group-hover:bg-primary group-hover:text-white transition-colors">
+                                <span class="material-symbols-outlined">mail</span>
+                            </div>
+                        </a>
+                    </div>
+                </div>
 
-    <!-- Estatísticas em 2 colunas -->
-    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+                <!-- Column 2: News Portal Stats (Right, Larger) -->
+                <div class="lg:col-span-8 space-y-4">
+                    <div class="flex items-center gap-2 mb-2">
+                        <span class="material-symbols-outlined text-secondary">newspaper</span>
+                        <h2 class="text-sm font-bold text-slate-900 uppercase tracking-wider">Portal de Notícias</h2>
+                    </div>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <!-- Card 1 -->
+                        <a href="{% url 'admin:news_article_changelist' %}?status=published" class="bg-white p-5 rounded border border-slate-200 shadow-sm flex flex-col justify-between h-32 hover:border-secondary/30 transition-colors cursor-pointer relative overflow-hidden group">
+                            <div class="absolute right-0 top-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+                                <span class="material-symbols-outlined text-6xl text-secondary">public</span>
+                            </div>
+                            <div class="flex justify-between items-start z-10">
+                                <div>
+                                    <p class="text-sm text-slate-500 font-medium">Artigos Publicados</p>
+                                    <p class="text-3xl font-bold text-slate-900 mt-2">{{ published_articles }}</p>
+                                </div>
+                                <div class="size-8 rounded bg-secondary/10 flex items-center justify-center text-secondary">
+                                    <span class="material-symbols-outlined text-[20px]">check_circle</span>
+                                </div>
+                            </div>
+                            <div class="mt-auto flex items-center gap-1 text-xs font-medium text-emerald-600 z-10">
+                                <span class="material-symbols-outlined text-[14px]">trending_up</span>
+                                <span>+12% este mês</span>
+                            </div>
+                        </a>
+                        <!-- Card 2 -->
+                        <a href="{% url 'admin:news_article_changelist' %}?status=draft" class="bg-white p-5 rounded border border-slate-200 shadow-sm flex flex-col justify-between h-32 hover:border-secondary/30 transition-colors cursor-pointer relative overflow-hidden group">
+                            <div class="absolute right-0 top-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+                                <span class="material-symbols-outlined text-6xl text-amber-500">edit_note</span>
+                            </div>
+                            <div class="flex justify-between items-start z-10">
+                                <div>
+                                    <p class="text-sm text-slate-500 font-medium">Rascunhos</p>
+                                    <p class="text-3xl font-bold text-slate-900 mt-2">{{ draft_articles }}</p>
+                                </div>
+                                <div class="size-8 rounded bg-amber-50 flex items-center justify-center text-amber-600">
+                                    <span class="material-symbols-outlined text-[20px]">hourglass_empty</span>
+                                </div>
+                            </div>
+                            <div class="mt-auto flex items-center gap-1 text-xs font-medium text-slate-400 z-10">
+                                <span>Última edição há 2h</span>
+                            </div>
+                        </a>
+                        <!-- Card 3 -->
+                        <a href="{% url 'admin:news_newslettersubscription_changelist' %}?is_active=True" class="bg-white p-5 rounded border border-slate-200 shadow-sm flex flex-col justify-between h-32 hover:border-secondary/30 transition-colors cursor-pointer relative overflow-hidden group">
+                            <div class="absolute right-0 top-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+                                <span class="material-symbols-outlined text-6xl text-secondary">group</span>
+                            </div>
+                            <div class="flex justify-between items-start z-10">
+                                <div>
+                                    <p class="text-sm text-slate-500 font-medium">Assinantes</p>
+                                    <p class="text-3xl font-bold text-slate-900 mt-2">{{ newsletter_subscribers }}</p>
+                                </div>
+                                <div class="size-8 rounded bg-secondary/10 flex items-center justify-center text-secondary">
+                                    <span class="material-symbols-outlined text-[20px]">subscriptions</span>
+                                </div>
+                            </div>
+                            <div class="mt-auto flex items-center gap-1 text-xs font-medium text-emerald-600 z-10">
+                                <span class="material-symbols-outlined text-[14px]">trending_up</span>
+                                <span>+54 novos hoje</span>
+                            </div>
+                        </a>
+                        <!-- Card 4 -->
+                        <a href="{% url 'admin:news_comment_changelist' %}?is_active=False" class="bg-white p-5 rounded border border-slate-200 shadow-sm flex flex-col justify-between h-32 hover:border-secondary/30 transition-colors cursor-pointer relative overflow-hidden group">
+                            <div class="absolute right-0 top-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+                                <span class="material-symbols-outlined text-6xl text-rose-500">rate_review</span>
+                            </div>
+                            <div class="flex justify-between items-start z-10">
+                                <div>
+                                    <p class="text-sm text-slate-500 font-medium">Comentários Pendentes</p>
+                                    <p class="text-3xl font-bold text-slate-900 mt-2">{{ pending_comments }}</p>
+                                </div>
+                                <div class="size-8 rounded bg-rose-50 flex items-center justify-center text-rose-500">
+                                    <span class="material-symbols-outlined text-[20px]">warning</span>
+                                </div>
+                            </div>
+                            <div class="mt-auto flex items-center gap-1 text-xs font-medium text-rose-600 z-10">
+                                <span>Requer atenção</span>
+                            </div>
+                        </a>
+                    </div>
+                </div>
+            </div>
 
-        <!-- Portal Escolar -->
-        <div class="bg-white dark:bg-gray-900 rounded-xl border border-gray-100 dark:border-gray-800 shadow-sm p-6">
-            <h2 class="text-sm font-bold uppercase tracking-widest text-gray-400 mb-4 flex items-center gap-2">
-                <span class="material-symbols-outlined text-[18px]">school</span>
-                {% trans "Portal Escolar" %}
-            </h2>
-            <div class="grid grid-cols-3 gap-4">
-                <a href="{% url 'admin:hiring_jobposting_changelist' %}?status=open"
-                    class="flex flex-col items-center p-4 rounded-lg bg-blue-50 dark:bg-blue-900/20 hover:bg-blue-100 dark:hover:bg-blue-900/40 transition-colors">
-                    <span class="text-3xl font-bold text-blue-600 dark:text-blue-400">{{ open_jobs }}</span>
-                    <span class="text-xs text-gray-500 mt-1 text-center">{% trans "Vagas Abertas" %}</span>
-                </a>
-                <a href="{% url 'admin:hiring_application_changelist' %}?status=pending"
-                    class="flex flex-col items-center p-4 rounded-lg bg-amber-50 dark:bg-amber-900/20 hover:bg-amber-100 transition-colors">
-                    <span class="text-3xl font-bold text-amber-600 dark:text-amber-400">{{ pending_applications
-                        }}</span>
-                    <span class="text-xs text-gray-500 mt-1 text-center">{% trans "Candidaturas" %}</span>
-                </a>
-                <a href="{% url 'admin:contact_contactinquiry_changelist' %}?status=new"
-                    class="flex flex-col items-center p-4 rounded-lg bg-red-50 dark:bg-red-900/20 hover:bg-red-100 transition-colors">
-                    <span class="text-3xl font-bold text-red-600 dark:text-red-400">{{ unread_messages }}</span>
-                    <span class="text-xs text-gray-500 mt-1 text-center">{% trans "Mensagens" %}</span>
-                </a>
+            <!-- Activity Tables Grid -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 pb-8">
+                <!-- Table 1: Últimos Artigos -->
+                <div class="bg-white border border-slate-200 rounded shadow-sm flex flex-col">
+                    <div class="p-5 border-b border-slate-100 flex justify-between items-center">
+                        <h3 class="font-bold text-slate-900">Últimos Artigos</h3>
+                        <a class="text-sm text-secondary font-medium hover:underline" href="{% url 'admin:news_article_changelist' %}">Ver todos</a>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left text-sm text-slate-600">
+                            <thead class="bg-slate-50 text-slate-900 font-semibold border-b border-slate-100">
+                                <tr>
+                                    <th class="px-5 py-3">Título</th>
+                                    <th class="px-5 py-3 w-32">Status</th>
+                                    <th class="px-5 py-3 w-24 text-right">Data</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-slate-100">
+                                {% for article in recent_articles %}
+                                <tr class="hover:bg-slate-50/50 transition-colors">
+                                    <td class="px-5 py-3 font-medium text-slate-900">
+                                        <a href="{% url 'admin:news_article_change' article.pk %}" class="hover:text-primary transition-colors">
+                                            {{ article.title }}
+                                        </a>
+                                    </td>
+                                    <td class="px-5 py-3">
+                                        {% if article.status == 'published' %}
+                                        <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-100 text-emerald-800">
+                                            <span class="size-1.5 rounded-full bg-emerald-500"></span> {{ article.get_status_display }}
+                                        </span>
+                                        {% elif article.status == 'draft' %}
+                                        <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-800">
+                                            <span class="size-1.5 rounded-full bg-amber-500"></span> {{ article.get_status_display }}
+                                        </span>
+                                        {% else %}
+                                        <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium bg-rose-100 text-rose-800">
+                                            <span class="size-1.5 rounded-full bg-rose-500"></span> {{ article.get_status_display }}
+                                        </span>
+                                        {% endif %}
+                                    </td>
+                                    <td class="px-5 py-3 text-right text-slate-500">{{ article.published_at|date:"d M" }}</td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="3" class="px-5 py-3 text-center text-slate-500">Nenhum artigo encontrado.</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Table 2: Últimas Candidaturas -->
+                <div class="bg-white border border-slate-200 rounded shadow-sm flex flex-col">
+                    <div class="p-5 border-b border-slate-100 flex justify-between items-center">
+                        <h3 class="font-bold text-slate-900">Últimas Candidaturas</h3>
+                        <a class="text-sm text-primary font-medium hover:underline" href="{% url 'admin:hiring_application_changelist' %}">Ver todas</a>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left text-sm text-slate-600">
+                            <thead class="bg-slate-50 text-slate-900 font-semibold border-b border-slate-100">
+                                <tr>
+                                    <th class="px-5 py-3">Candidato</th>
+                                    <th class="px-5 py-3">Vaga</th>
+                                    <th class="px-5 py-3 w-24 text-right">Ação</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-slate-100">
+                                {% for app in recent_applications %}
+                                <tr class="hover:bg-slate-50/50 transition-colors">
+                                    <td class="px-5 py-3">
+                                        <div class="flex items-center gap-3">
+                                            <div class="size-8 rounded-full bg-slate-200 flex items-center justify-center text-slate-500 font-bold text-xs uppercase">
+                                                {{ app.first_name|first }}{{ app.last_name|first }}
+                                            </div>
+                                            <div>
+                                                <p class="font-medium text-slate-900">{{ app.first_name }} {{ app.last_name }}</p>
+                                                <p class="text-xs text-slate-500">{{ app.email }}</p>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td class="px-5 py-3 text-slate-600">{{ app.job.title }}</td>
+                                    <td class="px-5 py-3 text-right">
+                                        <a href="{% url 'admin:hiring_application_change' app.pk %}" class="text-slate-400 hover:text-primary transition-colors">
+                                            <span class="material-symbols-outlined">visibility</span>
+                                        </a>
+                                    </td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="3" class="px-5 py-3 text-center text-slate-500">Nenhuma candidatura encontrada.</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
             </div>
         </div>
-
-        <!-- Portal de Notícias -->
-        <div class="bg-white dark:bg-gray-900 rounded-xl border border-gray-100 dark:border-gray-800 shadow-sm p-6">
-            <h2 class="text-sm font-bold uppercase tracking-widest text-gray-400 mb-4 flex items-center gap-2">
-                <span class="material-symbols-outlined text-[18px]">newspaper</span>
-                {% trans "Portal de Notícias" %}
-            </h2>
-            <div class="grid grid-cols-2 gap-4">
-                <a href="{% url 'admin:news_article_changelist' %}?status=published"
-                    class="flex flex-col items-center p-4 rounded-lg bg-green-50 dark:bg-green-900/20 hover:bg-green-100 transition-colors">
-                    <span class="text-3xl font-bold text-green-600 dark:text-green-400">{{ published_articles }}</span>
-                    <span class="text-xs text-gray-500 mt-1 text-center">{% trans "Publicados" %}</span>
-                </a>
-                <a href="{% url 'admin:news_article_changelist' %}?status=draft"
-                    class="flex flex-col items-center p-4 rounded-lg bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 transition-colors">
-                    <span class="text-3xl font-bold text-gray-600 dark:text-gray-400">{{ draft_articles }}</span>
-                    <span class="text-xs text-gray-500 mt-1 text-center">{% trans "Rascunhos" %}</span>
-                </a>
-                <a href="{% url 'admin:news_newslettersubscription_changelist' %}?is_active=True"
-                    class="flex flex-col items-center p-4 rounded-lg bg-indigo-50 dark:bg-indigo-900/20 hover:bg-indigo-100 transition-colors">
-                    <span class="text-3xl font-bold text-indigo-600 dark:text-indigo-400">{{ newsletter_subscribers
-                        }}</span>
-                    <span class="text-xs text-gray-500 mt-1 text-center">{% trans "Assinantes" %}</span>
-                </a>
-                <a href="{% url 'admin:news_comment_changelist' %}?is_active=False"
-                    class="flex flex-col items-center p-4 rounded-lg bg-orange-50 dark:bg-orange-900/20 hover:bg-orange-100 transition-colors">
-                    <span class="text-3xl font-bold text-orange-600 dark:text-orange-400">{{ pending_comments }}</span>
-                    <span class="text-xs text-gray-500 mt-1 text-center">{% trans "Comentários para revisar" %}</span>
-                </a>
-            </div>
-        </div>
-    </div>
-
-    <!-- Ações Rápidas -->
-    <div class="bg-white dark:bg-gray-900 rounded-xl border border-gray-100 dark:border-gray-800 shadow-sm p-6 mb-8">
-        <h2 class="text-sm font-bold uppercase tracking-widest text-gray-400 mb-4">{% trans "Ações Rápidas" %}</h2>
-        <div class="flex flex-wrap gap-3">
-            <a href="{% url 'admin:news_article_add' %}"
-                class="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-semibold hover:bg-blue-700 transition-colors">
-                <span class="material-symbols-outlined text-[16px]">add</span>
-                {% trans "Novo Artigo" %}
-            </a>
-            <a href="{% url 'admin:hiring_jobposting_add' %}"
-                class="inline-flex items-center gap-2 px-4 py-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 rounded-lg text-sm font-semibold hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
-                <span class="material-symbols-outlined text-[16px]">work</span>
-                {% trans "Nova Vaga" %}
-            </a>
-            <a href="{% url 'admin:hiring_application_changelist' %}"
-                class="inline-flex items-center gap-2 px-4 py-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 rounded-lg text-sm font-semibold hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
-                <span class="material-symbols-outlined text-[16px]">description</span>
-                {% trans "Ver Candidaturas" %}
-            </a>
-            <a href="{% url 'admin:contact_contactinquiry_changelist' %}"
-                class="inline-flex items-center gap-2 px-4 py-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 rounded-lg text-sm font-semibold hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
-                <span class="material-symbols-outlined text-[16px]">contact_mail</span>
-                {% trans "Mensagens" %}
-            </a>
-        </div>
-    </div>
-
-    <!-- Atividade Recente — 2 colunas -->
-    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
-
-        <!-- Últimos Artigos -->
-        <div
-            class="bg-white dark:bg-gray-900 rounded-xl border border-gray-100 dark:border-gray-800 shadow-sm overflow-hidden">
-            <div class="px-6 py-4 border-b border-gray-100 dark:border-gray-800 flex items-center justify-between">
-                <h2 class="text-sm font-bold text-gray-700 dark:text-gray-300">{% trans "Últimos Artigos" %}</h2>
-                <a href="{% url 'admin:news_article_changelist' %}" class="text-xs text-blue-600 hover:underline">{%
-                    trans "Ver todos" %}</a>
-            </div>
-            <table class="w-full text-sm">
-                {% for article in recent_articles %}
-                <tr
-                    class="border-b border-gray-50 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
-                    <td class="px-6 py-3">
-                        <a href="{% url 'admin:news_article_change' article.pk %}"
-                            class="font-medium text-gray-900 dark:text-white hover:text-blue-600 line-clamp-1">{{
-                            article.title }}</a>
-                        <div class="text-xs text-gray-400 mt-0.5">{{
-                            article.author.get_full_name|default:article.author.username }} · {{
-                            article.published_at|date:"d/m/Y" }}</div>
-                    </td>
-                    <td class="px-6 py-3 text-right">
-                        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold
-              {% if article.status == 'published' %}bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300
-              {% elif article.status == 'draft' %}bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400
-              {% else %}bg-orange-100 text-orange-700{% endif %}">
-                            {{ article.get_status_display }}
-                        </span>
-                    </td>
-                </tr>
-                {% empty %}
-                <tr>
-                    <td colspan="2" class="px-6 py-6 text-center text-gray-400 text-sm">{% trans "Nenhum artigo
-                        publicado ainda." %}</td>
-                </tr>
-                {% endfor %}
-            </table>
-        </div>
-
-        <!-- Últimas Candidaturas -->
-        <div
-            class="bg-white dark:bg-gray-900 rounded-xl border border-gray-100 dark:border-gray-800 shadow-sm overflow-hidden">
-            <div class="px-6 py-4 border-b border-gray-100 dark:border-gray-800 flex items-center justify-between">
-                <h2 class="text-sm font-bold text-gray-700 dark:text-gray-300">{% trans "Últimas Candidaturas" %}</h2>
-                <a href="{% url 'admin:hiring_application_changelist' %}"
-                    class="text-xs text-blue-600 hover:underline">{% trans "Ver todas" %}</a>
-            </div>
-            <table class="w-full text-sm">
-                {% for app in recent_applications %}
-                <tr
-                    class="border-b border-gray-50 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
-                    <td class="px-6 py-3">
-                        <a href="{% url 'admin:hiring_application_change' app.pk %}"
-                            class="font-medium text-gray-900 dark:text-white hover:text-blue-600">{{ app.first_name }}
-                            {{ app.last_name }}</a>
-                        <div class="text-xs text-gray-400 mt-0.5">{{ app.job.title }} · {{ app.created_at|date:"d/m/Y"
-                            }}</div>
-                    </td>
-                    <td class="px-6 py-3 text-right">
-                        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold
-              {% if app.status == 'pending' %}bg-yellow-100 text-yellow-800
-              {% elif app.status == 'reviewing' %}bg-blue-100 text-blue-800
-              {% elif app.status == 'approved' %}bg-green-100 text-green-800
-              {% else %}bg-red-100 text-red-800{% endif %}">
-                            {{ app.get_status_display }}
-                        </span>
-                    </td>
-                </tr>
-                {% empty %}
-                <tr>
-                    <td colspan="2" class="px-6 py-6 text-center text-gray-400 text-sm">{% trans "Nenhuma candidatura
-                        ainda." %}</td>
-                </tr>
-                {% endfor %}
-            </table>
-        </div>
-    </div>
-
+    </main>
 </div>
 {% endblock %}
