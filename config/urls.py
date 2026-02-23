@@ -8,6 +8,10 @@ from django.views.i18n import set_language
 from django.contrib.sitemaps.views import sitemap
 from apps.news.sitemaps import ArticleSitemap
 from apps.school.sitemaps import PageSitemap
+from apps.common.dashboard import AdminDashboardView
+
+# Override admin index with custom dashboard
+admin.site.index = AdminDashboardView.as_view()
 
 sitemaps = {
     'news': ArticleSitemap,
