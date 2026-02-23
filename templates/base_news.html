@@ -36,36 +36,35 @@
 
     {% block json_ld %}{% endblock %}
 
-    <!-- Fonts for News (Editorial style) -->
+    <!-- Fonts for News (Chronicle Design) -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link
-        href="https://fonts.googleapis.com/css2?family=Merriweather:ital,wght@0,300;0,400;0,700;1,400&family=Roboto:wght@400;500;700&display=swap"
-        rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,200..800;1,6..72,200..800&display=swap" rel="stylesheet"/>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet"/>
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
 
-    <!-- Tailwind CSS via CDN for News -->
-    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Tailwind CSS via CDN -->
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
     <script>
         tailwind.config = {
+            darkMode: "class",
             theme: {
                 extend: {
-                    fontFamily: {
-                        sans: ['Roboto', 'sans-serif'],
-                        display: ['Merriweather', 'serif'],
-                    },
                     colors: {
-                        primary: {
-                            50: '#ecfdf5',
-                            100: '#d1fae5',
-                            500: '#10b981',
-                            600: '#059669',
-                            700: '#047857',
-                            900: '#064e3b',
-                        },
-                        accent: '#f59e0b',
-                    }
-                }
-            }
+                        "primary": "#1152d4",
+                        "background-light": "#ffffff",
+                        "background-dark": "#101622",
+                        "slate-900": "#1a1a1a",
+                        "slate-500": "#6b7280",
+                    },
+                    fontFamily: {
+                        "display": ["Newsreader", "serif"],
+                        "sans": ["Inter", "sans-serif"],
+                        "ui": ["Inter", "sans-serif"],
+                    },
+                    borderRadius: { "DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px" },
+                },
+            },
         }
     </script>
 
@@ -74,12 +73,27 @@
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
 
     <style>
-        .glass-nav-news {
-            background: rgba(255, 255, 255, 0.95);
-            border-bottom: 2px solid #059669;
-            /* distinctive top border line */
+        /* Base typography */
+        body {
+            font-family: 'Newsreader', serif;
+        }
+        .font-ui {
+            font-family: 'Inter', sans-serif;
         }
 
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        ::-webkit-scrollbar-thumb {
+            background-color: #e5e7eb;
+            border-radius: 20px;
+        }
+
+        /* Utility classes */
         .hover-lift {
             transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
         }
@@ -113,28 +127,27 @@
     {% block extra_css %}{% endblock %}
 </head>
 
-<body class="bg-gray-100 text-gray-800 flex flex-col min-h-screen selection:bg-primary-500 selection:text-white"
+<body class="bg-background-light dark:bg-background-dark text-slate-900 dark:text-slate-100 min-h-screen flex flex-col antialiased"
     hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'>
 
     {% include 'components/navbar_news.html' %}
 
-    <main class="flex-grow pt-20">
-        {% if messages %}
-        <div class="fixed top-24 right-4 z-50 flex flex-col gap-2">
-            {% for message in messages %}
-            <div x-data="{ show: true }" x-show="show" x-transition.opacity.duration.300ms
-                x-init="setTimeout(() => show = false, 5000)"
-                class="p-4 shadow-md border-l-4 {% if message.tags == 'error' %}border-red-500 bg-red-50 text-red-900{% else %}border-primary-600 bg-primary-50 text-primary-900{% endif %} flex justify-between items-center min-w-[300px]">
-                <span class="font-sans">{{ message }}</span>
-                <button @click="show = false" class="ml-4 opacity-70 hover:opacity-100">&times;</button>
-            </div>
-            {% endfor %}
+    <!-- Flash Messages -->
+    {% if messages %}
+    <div class="fixed top-24 right-4 z-50 flex flex-col gap-2 pointer-events-none">
+        {% for message in messages %}
+        <div x-data="{ show: true }" x-show="show" x-transition.opacity.duration.300ms
+            x-init="setTimeout(() => show = false, 5000)"
+            class="pointer-events-auto p-4 shadow-lg rounded-lg border-l-4 {% if message.tags == 'error' %}border-red-500 bg-white text-red-900{% else %}border-primary bg-white text-slate-900{% endif %} flex justify-between items-center min-w-[300px]">
+            <span class="font-ui text-sm font-medium">{{ message }}</span>
+            <button @click="show = false" class="ml-4 opacity-70 hover:opacity-100">&times;</button>
         </div>
-        {% endif %}
+        {% endfor %}
+    </div>
+    {% endif %}
 
-        {% block content %}
-        {% endblock %}
-    </main>
+    {% block content %}
+    {% endblock %}
 
     {% include 'components/footer_news.html' %}
 

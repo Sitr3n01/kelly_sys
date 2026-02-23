@@ -59,183 +59,226 @@
 </script>
 {% endblock %}
 
-{% block content %}
-<article class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
-    <div class="flex flex-col lg:flex-row gap-12">
-        <!-- Main Content -->
-        <div class="flex-grow lg:w-2/3">
-            <!-- Breadcrumbs -->
-            <nav class="text-sm text-gray-500 mb-8 flex items-center flex-wrap gap-1">
-                <a href="{% url 'news:list' %}" class="hover:text-primary-600 transition-colors">Notícias</a>
-                <svg class="w-3 h-3 mx-1 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
-                </svg>
-                {% if article.category %}
-                <a href="{% url 'news:category_detail' article.category.slug %}" class="hover:text-primary-600 transition-colors">{{ article.category.name }}</a>
-                <svg class="w-3 h-3 mx-1 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
-                </svg>
-                {% endif %}
-                <span class="text-gray-400 truncate max-w-xs">{{ article.title }}</span>
-            </nav>
+{% block extra_css %}
+<style>
+    /* Custom typography scale for the article to match high-end editorial standards */
+    .article-body p {
+        margin-bottom: 1.5em;
+        font-size: 1.125rem;
+        line-height: 1.8;
+        color: #334155; /* slate-700 */
+    }
+    .dark .article-body p {
+        color: #cbd5e1; /* slate-300 */
+    }
+    .article-body h2 {
+        font-size: 1.875rem;
+        font-weight: 600;
+        margin-top: 2.5em;
+        margin-bottom: 1em;
+        line-height: 1.3;
+        letter-spacing: -0.02em;
+        color: #0f172a; /* slate-900 */
+    }
+    .dark .article-body h2 {
+        color: #f1f5f9; /* slate-100 */
+    }
+    .article-body h3 {
+        font-size: 1.5rem;
+        font-weight: 600;
+        margin-top: 2em;
+        margin-bottom: 0.75em;
+        color: #0f172a;
+    }
+    .dark .article-body h3 {
+        color: #f1f5f9;
+    }
+    .article-body > p:first-of-type::first-letter {
+        float: left;
+        font-size: 4.5rem;
+        line-height: 0.85;
+        padding-right: 0.15em;
+        font-weight: 700;
+        color: #1152d4; /* primary */
+    }
+    /* Lists inside article body */
+    .article-body ul {
+        list-style-type: disc;
+        padding-left: 1.5em;
+        margin-bottom: 1.5em;
+    }
+    .article-body ol {
+        list-style-type: decimal;
+        padding-left: 1.5em;
+        margin-bottom: 1.5em;
+    }
+    .article-body li {
+        margin-bottom: 0.5em;
+        color: #334155;
+    }
+    .dark .article-body li {
+        color: #cbd5e1;
+    }
+</style>
+{% endblock %}
 
-            <!-- Header -->
-            <header class="mb-12 fade-in">
+{% block content %}
+<main>
+    <article class="relative mx-auto max-w-[960px] px-6 py-12 lg:px-0">
+        <!-- Article Header Group -->
+        <div class="mx-auto max-w-[720px] mb-12">
+            <!-- Breadcrumbs -->
+            <div class="mb-6 flex items-center gap-2 text-sm font-medium tracking-wide">
+                <a class="text-primary hover:text-primary/80 transition-colors uppercase" href="{% url 'news:list' %}">News</a>
+                <span class="text-slate-300 dark:text-slate-700">/</span>
                 {% if article.category %}
-                <a href="{% url 'news:category_detail' article.category.slug %}"
-                    class="inline-block px-4 py-1.5 rounded-full bg-primary-100 text-primary-700 font-bold text-xs uppercase tracking-wider mb-6 hover:bg-primary-200 transition-colors">
+                <a class="text-slate-500 dark:text-slate-400 uppercase hover:text-primary transition-colors" href="{% url 'news:category_detail' article.category.slug %}">
                     {{ article.category.name }}
                 </a>
+                {% else %}
+                <span class="text-slate-500 dark:text-slate-400 uppercase">Article</span>
                 {% endif %}
+            </div>
 
-                <h1 class="text-4xl md:text-5xl font-display font-bold text-gray-900 mb-6 leading-tight">
-                    {{ article.title }}
-                </h1>
+            <!-- Headline -->
+            <h1 class="mb-6 text-4xl font-bold leading-[1.1] tracking-[-0.02em] text-slate-900 dark:text-slate-50 sm:text-5xl md:text-6xl font-display">
+                {{ article.title }}
+            </h1>
 
-                {% if article.excerpt %}
-                <p class="text-xl text-gray-600 max-w-3xl italic mb-8">
-                    {{ article.excerpt }}
-                </p>
-                {% endif %}
+            <!-- Subtitle (Excerpt) -->
+            {% if article.excerpt %}
+            <p class="mb-8 text-xl leading-relaxed text-slate-600 dark:text-slate-400 font-normal font-display">
+                {{ article.excerpt }}
+            </p>
+            {% endif %}
 
-                <div class="flex items-center gap-4 text-sm font-medium text-gray-500 flex-wrap">
+            <!-- Author Meta -->
+            <div class="flex items-center justify-between border-t border-b border-slate-200 dark:border-slate-800 py-4">
+                <div class="flex items-center gap-3">
                     {% if article.author %}
-                    <a href="{% url 'news:author_detail' article.author.username %}" class="flex items-center gap-2 hover:text-primary-600 transition-colors">
+                    <div class="h-10 w-10 overflow-hidden rounded-full bg-slate-200">
                         {% if article.author.avatar %}
-                        <img src="{{ article.author.avatar.url }}" alt="{{ article.author.get_full_name }}"
-                            class="w-8 h-8 rounded-full object-cover" loading="lazy">
+                        <img src="{{ article.author.avatar.url }}" alt="{{ article.author.get_full_name }}" class="h-full w-full object-cover">
                         {% else %}
-                        <div class="w-8 h-8 rounded-full bg-primary-100 flex items-center justify-center text-primary-600 text-sm font-bold">
+                        <div class="h-full w-full bg-primary/10 flex items-center justify-center text-primary font-bold text-xs">
                             {{ article.author.get_full_name|default:article.author.username|first|upper }}
                         </div>
                         {% endif %}
-                        <span>{{ article.author.get_full_name|default:article.author.username }}</span>
-                    </a>
-                    <span class="text-gray-300">&bull;</span>
+                    </div>
+                    <div class="flex flex-col">
+                        <span class="text-sm font-bold text-slate-900 dark:text-slate-100 font-ui">{{ article.author.get_full_name|default:article.author.username }}</span>
+                        <span class="text-xs text-slate-500 dark:text-slate-400 font-ui">{{ article.published_at|date:"M d, Y" }} • {{ article.reading_time }} min read</span>
+                    </div>
                     {% endif %}
-                    <time datetime="{{ article.published_at|date:'c' }}">{{ article.published_at|date:"d de F, Y" }}</time>
-                    <span class="text-gray-300">&bull;</span>
-                    <span>{{ article.reading_time }} min de leitura</span>
-                    <span class="text-gray-300">&bull;</span>
-                    <span>{{ article.view_count }} leituras</span>
                 </div>
-            </header>
 
-            <!-- Featured Image -->
-            {% if article.featured_image %}
-            <figure class="mb-12">
-                <div class="rounded-2xl overflow-hidden shadow-xl relative aspect-video">
-                    <img src="{{ article.featured_image.url }}" alt="{{ article.title }}"
-                        loading="eager"
-                        class="w-full h-full object-cover">
+                <!-- Header Actions -->
+                <div class="flex items-center gap-2">
+                    <button aria-label="Save Article" class="group flex h-8 w-8 items-center justify-center rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
+                        <span class="material-symbols-outlined text-[20px] text-slate-400 group-hover:text-primary transition-colors">bookmark</span>
+                    </button>
+                    <button aria-label="Share Article" onclick="if(navigator.share){navigator.share({title:'{{ article.title|escapejs }}',url:window.location.href})}else{alert('Link copied!')}" class="group flex h-8 w-8 items-center justify-center rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
+                        <span class="material-symbols-outlined text-[20px] text-slate-400 group-hover:text-primary transition-colors">ios_share</span>
+                    </button>
                 </div>
-                {% if article.featured_image_caption %}
-                <figcaption class="text-center text-sm text-gray-500 mt-4 italic">
+            </div>
+        </div>
+
+        <!-- Featured Image -->
+        {% if article.featured_image %}
+        <div class="mb-16 w-full overflow-hidden rounded-xl bg-slate-100 dark:bg-slate-900 shadow-sm">
+            <img src="{{ article.featured_image.url }}" alt="{{ article.title }}" class="aspect-[21/9] w-full object-cover">
+            {% if article.featured_image_caption %}
+            <div class="mt-3 px-4 text-center">
+                <p class="text-xs text-slate-500 dark:text-slate-400 font-ui">
                     {{ article.featured_image_caption }}
-                </figcaption>
-                {% endif %}
-            </figure>
+                </p>
+            </div>
             {% endif %}
+        </div>
+        {% endif %}
 
-            <!-- Content -->
-            <div class="prose prose-lg prose-primary max-w-none prose-headings:font-display prose-headings:font-bold prose-a:text-primary-600 hover:prose-a:text-primary-800 prose-img:rounded-2xl prose-img:shadow-xl">
+        <!-- Content Wrapper -->
+        <div class="relative mx-auto max-w-[720px]">
+            <!-- Sticky Social Sidebar (Desktop) -->
+            <div class="hidden xl:flex absolute -left-24 top-0 h-full flex-col">
+                <div class="sticky top-24 flex flex-col gap-4">
+                    <button class="group flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 bg-white shadow-sm hover:border-primary/50 hover:text-primary dark:border-slate-700 dark:bg-background-dark dark:text-slate-400 transition-all">
+                        <span class="material-symbols-outlined text-[20px]">thumb_up</span>
+                    </button>
+                    <button class="group flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 bg-white shadow-sm hover:border-primary/50 hover:text-primary dark:border-slate-700 dark:bg-background-dark dark:text-slate-400 transition-all">
+                        <span class="material-symbols-outlined text-[20px]">chat_bubble</span>
+                    </button>
+                    <div class="my-2 h-px w-6 self-center bg-slate-200 dark:bg-slate-800"></div>
+                    <button class="group flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 bg-white shadow-sm hover:border-primary/50 hover:text-primary dark:border-slate-700 dark:bg-background-dark dark:text-slate-400 transition-all">
+                        <span class="material-symbols-outlined text-[20px]">share</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Article Body -->
+            <div class="article-body font-display">
                 {{ article.content|safe }}
             </div>
 
-            <!-- Tags (clickable) -->
-            {% if article.tags.exists %}
-            <div class="mt-12 pt-8 border-t border-gray-100">
-                <h4 class="text-sm font-bold text-gray-900 uppercase tracking-wider mb-4">Tags</h4>
-                <div class="flex flex-wrap gap-2">
+            <!-- Article Footer -->
+            <div class="mt-16 border-t border-slate-200 dark:border-slate-800 pt-8">
+                <div class="flex flex-wrap gap-2 mb-8">
                     {% for tag in article.tags.all %}
-                    <a href="{% url 'news:tag_detail' tag.slug %}"
-                       class="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg text-sm font-medium hover:bg-primary-100 hover:text-primary-700 transition-colors">
-                        #{{ tag.name }}
+                    <a href="{% url 'news:tag_detail' tag.slug %}" class="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-slate-600 dark:bg-slate-800 dark:text-slate-300 hover:bg-primary/10 hover:text-primary transition-colors font-ui">
+                        {{ tag.name }}
                     </a>
                     {% endfor %}
                 </div>
-            </div>
-            {% endif %}
 
-            <!-- Share Buttons -->
-            <div class="mt-8 pt-8 border-t border-gray-100">
-                <h4 class="text-sm font-bold text-gray-900 uppercase tracking-wider mb-4">Compartilhar</h4>
-                <div class="flex gap-3">
-                    <!-- Share on X (Twitter) -->
-                    <a href="https://twitter.com/intent/tweet?text={{ article.title|urlencode }}&url={{ request.build_absolute_uri|urlencode }}"
-                       target="_blank" rel="noopener noreferrer"
-                       class="inline-flex items-center gap-2 px-4 py-2 bg-gray-900 text-white rounded-lg text-sm font-medium hover:bg-gray-700 transition-colors">
-                        <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
-                        Postar
-                    </a>
-                    <!-- Share on WhatsApp -->
-                    <a href="https://wa.me/?text={{ article.title|urlencode }}%20{{ request.build_absolute_uri|urlencode }}"
-                       target="_blank" rel="noopener noreferrer"
-                       class="inline-flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg text-sm font-medium hover:bg-green-700 transition-colors">
-                        <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
-                        WhatsApp
-                    </a>
-                    <!-- Copy Link -->
-                    <button onclick="navigator.clipboard.writeText(window.location.href);this.textContent='Copiado!';setTimeout(()=>this.innerHTML='<svg class=\'w-4 h-4 mr-1\' fill=\'none\' stroke=\'currentColor\' viewBox=\'0 0 24 24\'><path stroke-linecap=\'round\' stroke-linejoin=\'round\' stroke-width=\'2\' d=\'M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3\'/></svg>Copiar link',2000)"
-                            class="inline-flex items-center gap-1 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-200 transition-colors">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3"/>
-                        </svg>
-                        Copiar link
-                    </button>
+                <!-- Engagement Box (Newsletter) -->
+                <div class="rounded-lg bg-slate-100 p-8 dark:bg-slate-800/50" id="article-newsletter">
+                    <h3 class="mb-2 text-lg font-bold text-slate-900 dark:text-white font-display">Enjoyed this analysis?</h3>
+                    <p class="mb-6 text-slate-600 dark:text-slate-400 font-ui">Join our subscribers receiving our weekly deep dive.</p>
+                    <form hx-post="{% url 'news:newsletter_subscribe' %}" hx-target="#article-newsletter" hx-swap="outerHTML" class="flex flex-col gap-3 sm:flex-row">
+                        {% csrf_token %}
+                        <input name="email" type="email" required placeholder="Enter your email address"
+                               class="flex-1 rounded-md border-slate-300 bg-white px-4 py-2 text-slate-900 focus:border-primary focus:ring-primary dark:border-slate-600 dark:bg-slate-800 dark:text-white dark:placeholder-slate-400 font-ui">
+                        <button type="submit" class="rounded-md bg-primary px-6 py-2 font-semibold text-white transition-colors hover:bg-primary/90 font-ui">
+                            Subscribe
+                        </button>
+                    </form>
                 </div>
             </div>
+        </div>
+    </article>
 
-            <!-- Related Articles -->
-            {% if related_articles %}
-            <div class="mt-16 pt-12 border-t border-gray-200">
-                <h3 class="text-2xl font-display font-bold text-gray-900 mb-8">Artigos relacionados</h3>
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    {% for article in related_articles %}
-                    <a href="{% url 'news:article_detail' article.slug %}"
-                       class="group block bg-white rounded-2xl overflow-hidden shadow-sm border border-gray-100 hover-lift">
-                        <div class="aspect-[16/10] bg-gray-100 overflow-hidden">
-                            {% if article.featured_image %}
-                            <img src="{{ article.featured_image.url }}" alt="{{ article.title }}"
-                                loading="lazy"
-                                class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500">
-                            {% endif %}
+    <!-- Read Next Section -->
+    {% if related_articles %}
+    <section class="border-t border-slate-200 bg-white py-16 dark:border-slate-800 dark:bg-background-dark">
+        <div class="mx-auto max-w-[960px] px-6 lg:px-0">
+            <h3 class="mb-8 text-sm font-bold uppercase tracking-widest text-slate-400 font-ui">Read Next</h3>
+            <div class="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
+                {% for article in related_articles %}
+                <a class="group flex flex-col gap-3" href="{% url 'news:article_detail' article.slug %}">
+                    <div class="overflow-hidden rounded-lg bg-slate-200 h-48 w-full">
+                        {% if article.featured_image %}
+                        <img src="{{ article.featured_image.url }}" alt="{{ article.title }}" class="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105">
+                        {% else %}
+                        <div class="h-full w-full bg-slate-200 flex items-center justify-center text-slate-400">
+                            <span class="material-symbols-outlined text-4xl">image</span>
                         </div>
-                        <div class="p-4">
-                            <p class="text-xs text-gray-500 mb-1">{{ article.published_at|date:"d M, Y" }}</p>
-                            <h4 class="font-display font-bold text-gray-900 group-hover:text-primary-600 transition-colors line-clamp-2">
-                                {{ article.title }}
-                            </h4>
-                        </div>
-                    </a>
-                    {% endfor %}
-                </div>
-            </div>
-            {% endif %}
-
-            <!-- Newsletter CTA -->
-            <div class="mt-16 bg-primary-50 rounded-2xl p-8 md:p-12 text-center" id="newsletter-section">
-                <h3 class="text-2xl font-display font-bold text-gray-900 mb-3">Mantenha-se informado</h3>
-                <p class="text-gray-600 mb-6">Receba as principais notícias diretamente no seu e-mail.</p>
-                <form hx-post="{% url 'news:newsletter_subscribe' %}"
-                      hx-target="#newsletter-section"
-                      hx-swap="innerHTML"
-                      class="flex flex-col sm:flex-row gap-3 max-w-lg mx-auto">
-                    {% csrf_token %}
-                    <input type="email" name="email" placeholder="Seu melhor e-mail" required
-                        class="flex-grow rounded-full border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 px-6 py-3">
-                    <button type="submit"
-                        class="bg-primary-600 text-white rounded-full px-8 py-3 font-bold hover:bg-primary-700 transition-colors shadow-lg hover:shadow-primary-500/30">
-                        Assinar
-                    </button>
-                </form>
+                        {% endif %}
+                    </div>
+                    <div class="flex flex-col gap-1">
+                        {% if article.category %}
+                        <span class="text-xs font-bold uppercase text-primary font-ui">{{ article.category.name }}</span>
+                        {% endif %}
+                        <h4 class="text-lg font-bold leading-tight text-slate-900 group-hover:text-primary dark:text-slate-100 transition-colors font-display">
+                            {{ article.title }}
+                        </h4>
+                        <p class="text-sm text-slate-500 dark:text-slate-400 font-ui">By {{ article.author.get_full_name|default:article.author.username }} • {{ article.reading_time }} min read</p>
+                    </div>
+                </a>
+                {% endfor %}
             </div>
         </div>
-
-        <!-- Sidebar -->
-        <div class="lg:w-1/3">
-            {% include 'news/partials/sidebar.html' %}
-        </div>
-    </div>
-</article>
+    </section>
+    {% endif %}
+</main>
 {% endblock %}

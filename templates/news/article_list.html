@@ -1,107 +1,144 @@
 {% extends 'base_news.html' %}
 
-{% block title %}Portal de Notícias - {{ current_site.name }}{% endblock %}
+{% block title %}{{ current_site.name }} - Editorial Edition{% endblock %}
 
 {% block content %}
-<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
-    <div class="flex flex-col md:flex-row justify-between items-end mb-12">
-        <div>
-            <h1 class="text-4xl md:text-5xl font-display font-bold text-gray-900 mb-4">Últimas Notícias</h1>
-            <p class="text-xl text-gray-600">Acompanhe as novidades e eventos da nossa instituição.</p>
-        </div>
-
-        <div class="flex items-center gap-4 mt-6 md:mt-0">
-            <!-- Search Link -->
-            <a href="{% url 'news:search' %}"
-               class="text-gray-500 hover:text-primary-600 transition-colors p-2"
-               title="Buscar notícias">
-                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
-                </svg>
-            </a>
-
-            <!-- Category Filter -->
-            <div x-data="{ open: false }" class="relative z-20">
-                <button @click="open = !open" @click.away="open = false"
-                    class="bg-white border border-gray-200 text-gray-700 px-5 py-2.5 rounded-full font-medium inline-flex items-center hover:bg-gray-50 transition-colors shadow-sm">
-                    Categorias
-                    <svg class="w-5 h-5 ml-2 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
-                    </svg>
-                </button>
-                <div x-show="open" x-cloak x-transition:enter="transition ease-out duration-100"
-                    x-transition:enter-start="transform opacity-0 scale-95"
-                    x-transition:enter-end="transform opacity-100 scale-100"
-                    class="absolute right-0 mt-2 w-56 bg-white rounded-2xl shadow-xl border border-gray-100 py-2">
-                    {% for cat in categories %}
-                    <a href="{% url 'news:category_detail' cat.slug %}"
-                        class="block px-4 py-2 text-gray-700 hover:bg-primary-50 hover:text-primary-700">{{ cat.name }}</a>
-                    {% endfor %}
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Featured Article Hero -->
-    {% if featured %}
-    <div class="mb-16">
-        <a href="{% url 'news:article_detail' featured.slug %}"
-            class="group block relative rounded-3xl overflow-hidden shadow-lg h-[500px]">
-            {% if featured.featured_image %}
-            <img src="{{ featured.featured_image.url }}" alt="{{ featured.title }}"
-                loading="eager"
-                class="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-700">
-            {% else %}
-            <div class="absolute inset-0 w-full h-full bg-gray-900"></div>
-            {% endif %}
-            <div class="absolute inset-0 bg-gradient-to-t from-gray-900/90 via-gray-900/40 to-transparent"></div>
-
-            <div class="absolute inset-x-0 bottom-0 p-8 md:p-12 text-white">
-                {% if featured.category %}
-                <span class="inline-block px-3 py-1 bg-primary-600 rounded-full text-xs font-bold uppercase tracking-wider mb-4">
-                    {{ featured.category.name }}
-                </span>
-                {% endif %}
-                <h2 class="text-3xl md:text-5xl font-display font-bold mb-4 drop-shadow-lg group-hover:text-primary-200 transition-colors">
-                    {{ featured.title }}
-                </h2>
-                <p class="text-gray-200 line-clamp-2 text-lg mb-6 max-w-3xl">
-                    {{ featured.excerpt|default:featured.content|striptags|truncatewords:30 }}
-                </p>
-                <div class="flex items-center text-sm font-medium text-gray-300">
-                    {% if featured.author %}
-                    <span>{{ featured.author.get_full_name|default:featured.author.username }}</span>
-                    <span class="mx-2">&bull;</span>
+<main class="max-w-[1200px] mx-auto px-6 py-12 w-full grid grid-cols-1 lg:grid-cols-12 gap-12">
+    <!-- Left Column: Editorial Content (8 cols) -->
+    <div class="lg:col-span-8 flex flex-col gap-16">
+        <!-- Hero Story -->
+        {% if featured %}
+        <article class="flex flex-col gap-6 group cursor-pointer">
+            <a href="{% url 'news:article_detail' featured.slug %}" class="block">
+                <div class="w-full aspect-[2/1] overflow-hidden rounded-lg bg-gray-100 dark:bg-gray-800 relative">
+                    <div class="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent z-10"></div>
+                    {% if featured.featured_image %}
+                    <div class="w-full h-full bg-cover bg-center transition-transform duration-700 group-hover:scale-105"
+                         style="background-image: url('{{ featured.featured_image.url }}');">
+                    </div>
+                    {% else %}
+                    <div class="w-full h-full bg-slate-200 dark:bg-slate-800 flex items-center justify-center">
+                        <span class="material-symbols-outlined text-4xl text-slate-400">image</span>
+                    </div>
                     {% endif %}
-                    <span>{{ featured.published_at|date:"d M, Y" }}</span>
-                    <span class="mx-2">&bull;</span>
-                    <span>{{ featured.reading_time }} min de leitura</span>
                 </div>
-            </div>
-        </a>
-    </div>
-    {% endif %}
+                <div class="flex flex-col gap-3 mt-4">
+                    <div class="flex items-center gap-3 mb-1">
+                        {% if featured.category %}
+                        <span class="font-ui text-xs font-bold text-primary tracking-widest uppercase">{{ featured.category.name }}</span>
+                        {% endif %}
+                        <span class="font-ui text-xs text-slate-500 dark:text-slate-400">{{ featured.reading_time }} min read</span>
+                    </div>
+                    <h2 class="text-4xl md:text-5xl font-bold leading-[1.1] text-slate-900 dark:text-white group-hover:text-primary transition-colors">
+                        {{ featured.title }}
+                    </h2>
+                    <p class="text-xl leading-relaxed text-slate-600 dark:text-slate-300 max-w-2xl font-normal mt-2">
+                        {{ featured.excerpt|default:featured.content|striptags|truncatewords:30 }}
+                    </p>
+                    {% if featured.author %}
+                    <div class="flex items-center gap-3 mt-4 pt-4 border-t border-gray-100 dark:border-gray-800 w-full md:w-auto">
+                        {% if featured.author.avatar %}
+                        <div class="w-8 h-8 rounded-full bg-gray-200 bg-cover bg-center" style="background-image: url('{{ featured.author.avatar.url }}');"></div>
+                        {% else %}
+                        <div class="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-primary text-xs font-bold">
+                            {{ featured.author.get_full_name|default:featured.author.username|first|upper }}
+                        </div>
+                        {% endif %}
+                        <span class="font-ui text-sm font-medium text-slate-900 dark:text-white">By {{ featured.author.get_full_name|default:featured.author.username }}</span>
+                    </div>
+                    {% endif %}
+                </div>
+            </a>
+        </article>
+        {% endif %}
 
-    <div class="flex flex-col lg:flex-row gap-12">
-        <!-- Main Content -->
-        <div class="flex-grow lg:w-2/3">
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
-                {% for article in page_obj %}
-                    {% include 'news/partials/article_card.html' %}
+        <!-- Secondary Grid (First 2 items from page_obj) -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-12 border-t border-gray-100 dark:border-gray-800 pt-12">
+            {% for article in page_obj|slice:":2" %}
+            <article class="flex flex-col gap-4 group cursor-pointer">
+                <a href="{% url 'news:article_detail' article.slug %}" class="block">
+                    <div class="w-full aspect-[3/2] overflow-hidden rounded-lg bg-gray-100 dark:bg-gray-800 mb-2">
+                        {% if article.featured_image %}
+                        <div class="w-full h-full bg-cover bg-center transition-transform duration-500 group-hover:scale-105"
+                             style="background-image: url('{{ article.featured_image.url }}');">
+                        </div>
+                        {% else %}
+                        <div class="w-full h-full bg-slate-200 dark:bg-slate-800 flex items-center justify-center">
+                            <span class="material-symbols-outlined text-4xl text-slate-400">image</span>
+                        </div>
+                        {% endif %}
+                    </div>
+                    {% if article.category %}
+                    <span class="font-ui text-xs font-bold text-primary tracking-widest uppercase">{{ article.category.name }}</span>
+                    {% endif %}
+                    <h3 class="text-2xl font-bold leading-tight text-slate-900 dark:text-white group-hover:text-primary transition-colors">
+                        {{ article.title }}
+                    </h3>
+                    <p class="text-base text-slate-600 dark:text-slate-400 leading-relaxed line-clamp-3">
+                        {{ article.excerpt|default:article.content|striptags|truncatewords:20 }}
+                    </p>
+                </a>
+            </article>
+            {% endfor %}
+        </div>
+
+        <!-- Pull Quote Section (Static for visual flair, or dynamic if we had a quote model) -->
+        <div class="py-12 my-4 relative hidden md:block">
+            <span class="absolute top-8 left-0 text-6xl text-primary/20 font-serif leading-none">“</span>
+            <blockquote class="text-3xl md:text-4xl italic text-center font-serif text-slate-800 dark:text-slate-200 leading-tight px-8 max-w-3xl mx-auto">
+                The most powerful tool we have for changing the world is our ability to change our minds about the nature of reality.
+            </blockquote>
+            <div class="text-center mt-6 font-ui text-sm text-slate-500 uppercase tracking-widest">— From "The Cognitive Shift"</div>
+        </div>
+
+        <!-- Opinion / List Section (Remaining items) -->
+        <div class="border-t border-gray-100 dark:border-gray-800 pt-12">
+            <h4 class="font-ui text-sm font-bold uppercase tracking-widest text-slate-500 mb-8">Opinion &amp; Essays</h4>
+            <div class="flex flex-col gap-8">
+                {% for article in page_obj|slice:"2:" %}
+                <article class="flex flex-col md:flex-row gap-6 items-start group cursor-pointer">
+                    <div class="flex-1">
+                        <a href="{% url 'news:article_detail' article.slug %}">
+                            <h3 class="text-xl font-bold text-slate-900 dark:text-white mb-2 group-hover:text-primary transition-colors">
+                                {{ article.title }}
+                            </h3>
+                            <p class="text-slate-600 dark:text-slate-400 leading-relaxed line-clamp-2">
+                                {{ article.excerpt|default:article.content|striptags|truncatewords:30 }}
+                            </p>
+                            <div class="mt-3 flex items-center gap-2">
+                                {% if article.author %}
+                                <span class="font-ui text-xs font-medium text-slate-500">By {{ article.author.get_full_name|default:article.author.username }}</span>
+                                <span class="text-slate-300">•</span>
+                                {% endif %}
+                                <span class="font-ui text-xs text-slate-400">{{ article.reading_time }} min read</span>
+                            </div>
+                        </a>
+                    </div>
+                    {% if article.featured_image %}
+                    <a href="{% url 'news:article_detail' article.slug %}" class="w-full md:w-48 aspect-video rounded bg-gray-100 dark:bg-gray-800 overflow-hidden block">
+                        <div class="w-full h-full bg-cover bg-center grayscale opacity-80 group-hover:grayscale-0 group-hover:opacity-100 transition-all"
+                             style="background-image: url('{{ article.featured_image.url }}');">
+                        </div>
+                    </a>
+                    {% endif %}
+                </article>
                 {% empty %}
-                <div class="col-span-full text-center py-20 text-gray-500 bg-gray-50 rounded-3xl">
-                    Ainda não há notícias publicadas.
-                </div>
+                {% if page_obj.paginator.count <= 2 %}
+                <!-- No more articles to show in list view -->
+                {% else %}
+                <p class="text-slate-500">No more articles.</p>
+                {% endif %}
                 {% endfor %}
             </div>
 
+            <!-- Pagination -->
             {% include 'news/partials/pagination.html' %}
         </div>
-
-        <!-- Sidebar -->
-        <div class="lg:w-1/3">
-            {% include 'news/partials/sidebar.html' %}
-        </div>
     </div>
-</div>
+
+    <!-- Right Column: Sidebar / Latest Updates (4 cols) -->
+    <aside class="lg:col-span-4 pl-0 lg:pl-12 border-l-0 lg:border-l border-gray-100 dark:border-gray-800 relative">
+        {% include 'news/partials/sidebar.html' %}
+    </aside>
+</main>
 {% endblock %}
