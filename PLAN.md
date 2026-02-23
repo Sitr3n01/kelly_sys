@@ -1,0 +1,146 @@
+# Kelly Sys - Plano Global do Projeto
+
+## Visão Geral
+
+Sistema web unificado que gerencia dois sites de um grupo educacional:
+- **Site da Escola** — institucional com contratação e contato
+- **Portal de Notícias** — portal público de notícias
+
+Painel administrativo único (Django Unfold) para gerenciar ambos.
+
+---
+
+## Stack
+
+- **Backend:** Python 3.12+ / Django 5.x
+- **Database:** PostgreSQL 16
+- **Frontend:** Django Templates + HTMX + Alpine.js
+- **Admin:** Django Unfold
+- **Static:** WhiteNoise
+- **Dev:** Docker Compose (Django + PostgreSQL + Mailpit)
+
+---
+
+## Estrutura de Apps
+
+| App | Responsabilidade |
+|-----|-----------------|
+| `apps.common` | Models abstratos, SiteExtension, utils, context processors |
+| `apps.accounts` | CustomUser, roles, permissões (Groups) |
+| `apps.school` | Páginas CMS, equipe, depoimentos |
+| `apps.hiring` | Vagas, candidaturas, departamentos |
+| `apps.contact` | Formulários de contato e inquiries |
+| `apps.news` | Artigos, categorias, tags, RSS, newsletter |
+| `apps.media_library` | Biblioteca de mídia compartilhada |
+
+---
+
+## Fases e Status
+
+### Fase 1: Fundação ✅
+| # | Tarefa | Status |
+|---|--------|--------|
+| 1 | Estrutura de diretórios e config Django | ✅ Concluído |
+| 2 | `config/settings/base.py` completo | ✅ Concluído |
+| 3 | `apps.accounts` com CustomUser | ✅ Concluído |
+| 4 | `apps.common` com models abstratos | ✅ Concluído |
+| 5 | Docker Compose dev | ✅ Concluído |
+| 6 | Primeira migration + superuser | ✅ Concluído |
+| 7 | Django Unfold configurado | ✅ Concluído |
+
+### Fase 2: Apps de Conteúdo ✅
+| # | Tarefa | Status |
+|---|--------|--------|
+| 8 | `apps.school` completo | ✅ Concluído |
+| 9 | `apps.hiring` completo | ✅ Concluído |
+| 10 | `apps.contact` completo | ✅ Concluído |
+| 11 | `apps.news` básico (models, views, admin) | ✅ Concluído |
+| 12 | `apps.media_library` completo | ✅ Concluído |
+
+### Fase 3: Templates e Frontend (Básico) ✅
+| # | Tarefa | Status |
+|---|--------|--------|
+| 13 | Base templates (base.html, base_school.html, base_news.html) | ✅ Concluído |
+| 14 | Templates escola (home, page_detail, team_list) | ✅ Concluído |
+| 15 | Templates notícias (article_list, article_detail, category_detail) | ✅ Concluído |
+| 16 | Templates contratação (job_list, job_detail) | ✅ Concluído |
+| 17 | Templates contato (contact_page) | ✅ Concluído |
+| 18 | Integração HTMX (middleware configurado) | ✅ Concluído |
+| 19 | Integração Alpine.js (menus, flash messages) | ✅ Concluído |
+
+### Fase 4: Polimento e Deploy ✅
+| # | Tarefa | Status |
+|---|--------|--------|
+| 20 | Data migrations iniciais | ✅ Concluído |
+| 21 | Sitemaps (ArticleSitemap, PageSitemap) | ✅ Concluído |
+| 22 | Testes (school, news, hiring, contact) | ✅ Concluído |
+| 23 | Docker Compose produção + Nginx | ✅ Concluído |
+| 24 | CI/CD GitHub Actions | ✅ Concluído |
+| 25 | Documentação deploy (DEPLOY.md) | ✅ Concluído |
+
+---
+
+### Fase 5: Portal de Notícias — Funcionalidades Completas 🔄
+| # | Tarefa | Status |
+|---|--------|--------|
+| 5A | Correções backend: `get_absolute_url`, `F()` view_count, `select_related`, `utils.py` | ⬜ Pendente |
+| 5B | Model `NewsletterSubscription` + form + view + admin | ⬜ Pendente |
+| 5C | Novas views: tag, autor, busca, arquivo, load-more HTMX, relacionados | ⬜ Pendente |
+| 5D | RSS Feeds (`LatestArticlesFeed`, `CategoryFeed`) | ⬜ Pendente |
+| 5E | SEO: Open Graph, Twitter Cards, JSON-LD, canonical, RSS link | ⬜ Pendente |
+| 5F | Partials reutilizáveis: card, sidebar, grid, paginação, newsletter HTMX | ⬜ Pendente |
+| 5G | Páginas novas: tag_detail, author_detail, search, archive | ⬜ Pendente |
+| 5H | Atualização templates existentes: list, detail, category, navbar | ⬜ Pendente |
+| 5I | Admin aprimorado: Unfold ModelAdmin, fieldsets, actions | ⬜ Pendente |
+| 5J | Context processor: categorias na navegação | ⬜ Pendente |
+
+### Fase 6: Portal de Notícias — Design (Google Stitch) ⬜
+| # | Tarefa | Status |
+|---|--------|--------|
+| 6.1 | Exportar template Google Stitch | ⬜ Pendente |
+| 6.2 | Adaptar paleta de cores e tipografia | ⬜ Pendente |
+| 6.3 | Implementar layout de componentes do Stitch | ⬜ Pendente |
+| 6.4 | Responsividade mobile | ⬜ Pendente |
+
+### Fase 7: Site da Escola — Funcionalidades e Design ⬜
+| # | Tarefa | Status |
+|---|--------|--------|
+| 7.1 | (A definir após portal de notícias) | ⬜ Pendente |
+
+---
+
+## Decisões Arquiteturais
+
+1. **Multi-site via Django Sites Framework** — roteamento por path inicialmente, subdomínios depois
+2. **CustomUser antes da 1ª migration** — obrigatório pelo Django
+3. **Django Unfold** para admin — sem construir painel customizado
+4. **HTMX + Alpine.js** — SEO nativo, sem build pipeline JS
+5. **WhiteNoise** — serve statics sem Nginx em dev e shared hosting
+6. **Path-based routing** — escola em `/`, notícias em `/news/`
+7. **Funcionalidade antes do design** — toda a lógica do portal de notícias implementada primeiro, design visual do Stitch aplicado depois como camada separada
+8. **FBV (Function-Based Views)** — padrão consistente em todo o projeto, sem migrar para CBV
+9. **Busca com Django Q()** — sem biblioteca externa (Elasticsearch desnecessário para volume escolar)
+10. **`get_sidebar_context()` como utility** — evita queries desnecessárias em páginas que não precisam da sidebar
+
+---
+
+## Bugs Conhecidos (Fase 5A)
+
+| Bug | Impacto | Fix |
+|-----|---------|-----|
+| `Article` sem `get_absolute_url()` | Sitemap quebra | Adicionar método |
+| `view_count` com `.save()` | Race condition em acessos simultâneos | Usar `F()` expression |
+| Views sem `select_related` | N+1 queries em todas as listagens | Adicionar em todas as views |
+| `feeds.py` placeholder | RSS não funciona | Implementar feeds completos |
+| Tags não-clicáveis | UX quebrada no article_detail | Criar view + URL de tag |
+| Newsletter sem backend | Formulário enganoso | Criar model + view |
+
+---
+
+## Estado Atual
+
+- **Fase:** 5 — Portal de Notícias (Funcionalidades Completas)
+- **Tarefa ativa:** Fases 5A-5J (todas no GEMINI.md)
+- **Última atualização:** 2026-02-23
+- **Próximo passo:** Gemini executa Fases 5A-5J
+- **Bloqueios:** Template Google Stitch pendente para Fase 6

@@ -1,0 +1,18 @@
+{% if page_obj %}
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+  {% for article in page_obj %}
+    {% include 'news/partials/article_card.html' %}
+  {% endfor %}
+</div>
+{% include 'news/partials/pagination.html' %}
+{% else %}
+{% if query %}
+<div class="text-center py-16 text-gray-500">
+  <svg class="w-16 h-16 text-gray-300 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+  </svg>
+  <p class="text-lg">Nenhum resultado encontrado para <strong>"{{ query }}"</strong>.</p>
+  <p class="text-sm mt-2">Tente outros termos de busca.</p>
+</div>
+{% endif %}
+{% endif %}

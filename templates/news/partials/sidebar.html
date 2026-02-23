@@ -1,0 +1,64 @@
+<aside class="space-y-8">
+  <!-- Mais Lidas -->
+  <div class="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm">
+    <h3 class="font-display font-bold text-gray-900 text-lg mb-4 pb-3 border-b border-gray-100">Mais Lidas</h3>
+    <div class="space-y-4">
+      {% for item in popular_articles %}
+      <a href="{% url 'news:article_detail' item.slug %}" class="flex gap-3 group">
+        {% if item.featured_image %}
+        <img src="{{ item.featured_image.url }}" alt="{{ item.title }}"
+             class="w-16 h-16 rounded-xl object-cover flex-shrink-0" loading="lazy">
+        {% else %}
+        <div class="w-16 h-16 rounded-xl bg-primary-100 flex-shrink-0"></div>
+        {% endif %}
+        <div>
+          <p class="text-sm font-semibold text-gray-800 group-hover:text-primary-600 transition-colors line-clamp-2">{{ item.title }}</p>
+          <p class="text-xs text-gray-400 mt-1">{{ item.view_count }} leituras</p>
+        </div>
+      </a>
+      {% endfor %}
+    </div>
+  </div>
+
+  <!-- Categorias -->
+  <div class="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm">
+    <h3 class="font-display font-bold text-gray-900 text-lg mb-4 pb-3 border-b border-gray-100">Categorias</h3>
+    <ul class="space-y-2">
+      {% for cat in top_categories %}
+      <li>
+        <a href="{% url 'news:category_detail' cat.slug %}"
+           class="flex justify-between items-center text-gray-700 hover:text-primary-600 transition-colors py-1">
+          <span class="font-medium">{{ cat.name }}</span>
+          <span class="text-xs bg-gray-100 text-gray-500 px-2 py-0.5 rounded-full">{{ cat.article_count }}</span>
+        </a>
+      </li>
+      {% endfor %}
+    </ul>
+  </div>
+
+  <!-- Tag Cloud -->
+  <div class="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm">
+    <h3 class="font-display font-bold text-gray-900 text-lg mb-4 pb-3 border-b border-gray-100">Tags</h3>
+    <div class="flex flex-wrap gap-2">
+      {% for t in top_tags %}
+      <a href="{% url 'news:tag_detail' t.slug %}"
+         class="px-3 py-1.5 bg-gray-100 text-gray-600 text-xs font-medium rounded-lg hover:bg-primary-100 hover:text-primary-700 transition-colors">
+        #{{ t.name }}
+      </a>
+      {% endfor %}
+    </div>
+  </div>
+
+  <!-- RSS Feed -->
+  <div class="bg-primary-900 rounded-2xl p-6 text-white">
+    <h3 class="font-display font-bold text-lg mb-2">RSS Feed</h3>
+    <p class="text-primary-200 text-sm mb-4">Assine nosso feed para receber todas as atualizações.</p>
+    <a href="{% url 'news:feed' %}"
+       class="inline-flex items-center gap-2 bg-white text-primary-900 px-4 py-2 rounded-xl font-bold text-sm hover:bg-primary-50 transition-colors">
+      <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+        <path d="M6.18 15.64a2.18 2.18 0 0 1 2.18 2.18C8.36 19.01 7.38 20 6.18 20C4.98 20 4 19.01 4 17.82a2.18 2.18 0 0 1 2.18-2.18M4 4.44A15.56 15.56 0 0 1 19.56 20h-2.83A12.73 12.73 0 0 0 4 7.27V4.44m0 5.66a9.9 9.9 0 0 1 9.9 9.9h-2.83A7.07 7.07 0 0 0 4 12.93V10.1z"/>
+      </svg>
+      Assinar Feed
+    </a>
+  </div>
+</aside>

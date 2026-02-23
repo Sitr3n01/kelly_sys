@@ -1,0 +1,16 @@
+[project]
+name = "kelly-sys"
+version = "0.1.0"
+description = "Sistema web para escola e portal de notícias"
+requires-python = ">=3.12"
+
+[tool.ruff]
+line-length = 120
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "N", "W"]
+
+[tool.pytest.ini_options]
+DJANGO_SETTINGS_MODULE = "config.settings.test"
+python_files = "tests.py test_*.py"

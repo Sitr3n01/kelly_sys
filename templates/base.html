@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="{{ LANGUAGE_CODE }}" class="antialiased">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>{% block title %}{{ site_settings.tagline|default:current_site.name }}{% endblock %}</title>
+  
+  <meta name="description" content="{% block meta_description %}{{ site_settings.tagline }}{% endblock %}">
+  {% if site_settings.favicon %}
+    <link rel="icon" href="{{ site_settings.favicon.url }}">
+  {% endif %}
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <!-- Tailwind CSS via CDN for development (Aesthetics & Premium Design) -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+            display: ['Outfit', 'sans-serif'],
+          },
+          colors: {
+            primary: {
+              50: '#f0f9ff',
+              100: '#e0f2fe',
+              500: '#0ea5e9',
+              600: '#0284c7',
+              700: '#0369a1',
+              900: '#0c4a6e',
+            },
+            accent: '#f43f5e',
+          }
+        }
+      }
+    }
+  </script>
+
+  <!-- HTMX & Alpine.js -->
+  <script src="https://unpkg.com/htmx.org@2.0.0" defer></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+
+  <style>
+    /* Custom utility classes and micro-animations */
+    .glass-nav {
+      background: rgba(255, 255, 255, 0.85);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border-bottom: 1px solid rgba(255,255,255,0.3);
+    }
+    .hover-lift {
+      transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .hover-lift:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+    }
+    .fade-in {
+      animation: fadeIn 0.6s ease-out forwards;
+      opacity: 0;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    [x-cloak] { display: none !important; }
+  </style>
+
+  {% block extra_css %}{% endblock %}
+</head>
+<body class="bg-gray-50 text-gray-800 flex flex-col min-h-screen selection:bg-primary-500 selection:text-white" hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'>
+
+  {% include 'components/navbar.html' %}
+  
+  <!-- Add top padding to account for fixed navbar -->
+  <main class="flex-grow pt-20">
+    {% if messages %}
+      <div class="fixed top-24 right-4 z-50 flex flex-col gap-2">
+        {% for message in messages %}
+          <div x-data="{ show: true }" x-show="show" x-transition.opacity.duration.300ms 
+               x-init="setTimeout(() => show = false, 5000)"
+               class="p-4 rounded-xl shadow-lg {% if message.tags == 'error' %}bg-red-500{% else %}bg-green-600{% endif %} text-white flex justify-between items-center min-w-[300px]">
+            <span>{{ message }}</span>
+            <button @click="show = false" class="ml-4 opacity-70 hover:opacity-100">&times;</button>
+          </div>
+        {% endfor %}
+      </div>
+    {% endif %}
+
+    {% block content %}
+    {% endblock %}
+  </main>
+
+  {% include 'components/footer.html' %}
+
+  {% block extra_js %}{% endblock %}
+</body>
+</html>

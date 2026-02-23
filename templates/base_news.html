@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="{{ LANGUAGE_CODE }}" class="antialiased">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>{% block title %}{{ site_settings.tagline|default:current_site.name }}{% endblock %}</title>
+
+    <meta name="description" content="{% block meta_description %}{{ site_settings.tagline }}{% endblock %}">
+    {% if site_settings.favicon %}
+    <link rel="icon" href="{{ site_settings.favicon.url }}">
+    {% endif %}
+
+    <!-- Open Graph -->
+    {% block og_tags %}
+    <meta property="og:site_name" content="{{ current_site.name }}">
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="{% block og_title %}{{ current_site.name }}{% endblock %}">
+    <meta property="og:description" content="{% block og_description %}{{ site_settings.tagline }}{% endblock %}">
+    <meta property="og:url" content="{{ request.build_absolute_uri }}">
+    {% block og_image %}{% endblock %}
+    {% endblock %}
+
+    <!-- Twitter Cards -->
+    {% block twitter_tags %}
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="{% block twitter_title %}{{ current_site.name }}{% endblock %}">
+    <meta name="twitter:description" content="{% block twitter_description %}{{ site_settings.tagline }}{% endblock %}">
+    {% block twitter_image %}{% endblock %}
+    {% endblock %}
+
+    <!-- Canonical & RSS -->
+    <link rel="canonical" href="{{ request.build_absolute_uri }}">
+    <link rel="alternate" type="application/rss+xml" title="{{ current_site.name }} RSS" href="{% url 'news:feed' %}">
+
+    {% block json_ld %}{% endblock %}
+
+    <!-- Fonts for News (Editorial style) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Merriweather:ital,wght@0,300;0,400;0,700;1,400&family=Roboto:wght@400;500;700&display=swap"
+        rel="stylesheet">
+
+    <!-- Tailwind CSS via CDN for News -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Roboto', 'sans-serif'],
+                        display: ['Merriweather', 'serif'],
+                    },
+                    colors: {
+                        primary: {
+                            50: '#ecfdf5',
+                            100: '#d1fae5',
+                            500: '#10b981',
+                            600: '#059669',
+                            700: '#047857',
+                            900: '#064e3b',
+                        },
+                        accent: '#f59e0b',
+                    }
+                }
+            }
+        }
+    </script>
+
+    <!-- HTMX & Alpine.js -->
+    <script src="https://unpkg.com/htmx.org@2.0.0" defer></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+
+    <style>
+        .glass-nav-news {
+            background: rgba(255, 255, 255, 0.95);
+            border-bottom: 2px solid #059669;
+            /* distinctive top border line */
+        }
+
+        .hover-lift {
+            transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .hover-lift:hover {
+            transform: translateY(-2px);
+        }
+
+        .fade-in {
+            animation: fadeIn 0.8s ease-out forwards;
+            opacity: 0;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(5px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        [x-cloak] {
+            display: none !important;
+        }
+    </style>
+
+    {% block extra_css %}{% endblock %}
+</head>
+
+<body class="bg-gray-100 text-gray-800 flex flex-col min-h-screen selection:bg-primary-500 selection:text-white"
+    hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'>
+
+    {% include 'components/navbar_news.html' %}
+
+    <main class="flex-grow pt-20">
+        {% if messages %}
+        <div class="fixed top-24 right-4 z-50 flex flex-col gap-2">
+            {% for message in messages %}
+            <div x-data="{ show: true }" x-show="show" x-transition.opacity.duration.300ms
+                x-init="setTimeout(() => show = false, 5000)"
+                class="p-4 shadow-md border-l-4 {% if message.tags == 'error' %}border-red-500 bg-red-50 text-red-900{% else %}border-primary-600 bg-primary-50 text-primary-900{% endif %} flex justify-between items-center min-w-[300px]">
+                <span class="font-sans">{{ message }}</span>
+                <button @click="show = false" class="ml-4 opacity-70 hover:opacity-100">&times;</button>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        {% block content %}
+        {% endblock %}
+    </main>
+
+    {% include 'components/footer_news.html' %}
+
+    {% block extra_js %}{% endblock %}
+</body>
+
+</html>

@@ -1,0 +1,53 @@
+name: Django CI/CD
+
+on:
+  push:
+    branches: [ "main", "master" ]
+  pull_request:
+    branches: [ "main", "master" ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_DB: kelly_sys_test
+          POSTGRES_USER: kelly_user
+          POSTGRES_PASSWORD: kelly_pass
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Python 3.12
+      uses: actions/setup-python@v5
+      with:
+        python-version: "3.12"
+        
+    - name: Install Dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements/development.txt
+        
+    - name: Run Linting
+      run: |
+        ruff check .
+        
+    - name: Run Tests
+      env:
+        DJANGO_SETTINGS_MODULE: config.settings.test
+        DB_HOST: localhost
+        DB_PORT: 5432
+        DB_NAME: kelly_sys_test
+        DB_USER: kelly_user
+        DB_PASSWORD: kelly_pass
+      run: |
+        pytest

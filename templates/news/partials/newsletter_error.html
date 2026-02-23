@@ -1,0 +1,12 @@
+<form hx-post="{% url 'news:newsletter_subscribe' %}" hx-target="this" hx-swap="outerHTML"
+      class="flex flex-col sm:flex-row gap-3 max-w-lg mx-auto">
+  {% csrf_token %}
+  {{ form.email }}
+  <button type="submit"
+    class="bg-primary-600 text-white rounded-full px-8 py-4 font-bold hover:bg-primary-700 transition-colors shadow-lg hover:shadow-primary-500/30">
+    Assinar
+  </button>
+  {% if form.email.errors %}
+  <p class="text-red-500 text-sm w-full text-center sm:col-span-2">{{ form.email.errors|first }}</p>
+  {% endif %}
+</form>
