@@ -1,121 +1,86 @@
-<nav x-data="{ mobileMenuOpen: false }" class="fixed w-full top-0 z-50 glass-nav-news shadow-sm">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div class="flex justify-between h-20 items-center">
-            <!-- Logo -->
-            <div class="flex-shrink-0 flex items-center">
-                <a href="{% url 'news:list' %}" class="flex items-center gap-3 group">
-                    <div class="h-10 w-10 bg-primary-900 rounded-sm flex items-center justify-center text-white font-display font-bold text-2xl group-hover:bg-primary-700 transition-colors">
-                        K<span class="text-primary-300">.</span>
-                    </div>
-                    <span class="font-display font-black text-2xl tracking-tight text-gray-900 uppercase">Notícias</span>
-                </a>
-            </div>
+<header x-data="{ mobileMenuOpen: false }" class="sticky top-0 z-50 bg-background-light/95 dark:bg-background-dark/95 backdrop-blur-sm border-b border-gray-100 dark:border-gray-800 transition-colors duration-200">
+    <div class="max-w-[1200px] mx-auto px-6 h-16 flex items-center justify-between">
+        <!-- Logo Section -->
+        <div class="flex items-center gap-3">
+            <a href="{% url 'news:list' %}" class="flex items-center gap-3 group">
+                <div class="text-primary group-hover:text-primary/80 transition-colors">
+                    <span class="material-symbols-outlined text-[28px]">newspaper</span>
+                </div>
+                <h1 class="text-2xl font-bold tracking-tight text-slate-900 dark:text-white group-hover:text-primary transition-colors">
+                    {{ current_site.name|default:"The Chronicle" }}
+                </h1>
+            </a>
+        </div>
 
-            <!-- Desktop Menu -->
-            <div class="hidden md:flex space-x-1 items-center">
-                <a href="{% url 'news:list' %}"
-                    class="text-gray-700 hover:text-primary-700 font-bold font-sans uppercase tracking-widest text-sm transition-colors px-3 py-2">Capa</a>
+        <!-- Center Navigation (Desktop) -->
+        <nav class="hidden md:flex items-center gap-8">
+            <a href="{% url 'news:list' %}"
+               class="font-ui text-sm font-medium text-slate-900 dark:text-slate-200 hover:text-primary transition-colors">
+                Capa
+            </a>
+            {% for cat in nav_categories %}
+            <a href="{% url 'news:category_detail' cat.slug %}"
+               class="font-ui text-sm font-medium text-slate-900 dark:text-slate-200 hover:text-primary transition-colors">
+                {{ cat.name }}
+            </a>
+            {% endfor %}
+        </nav>
 
-                {% for cat in nav_categories %}
-                <a href="{% url 'news:category_detail' cat.slug %}"
-                    class="text-gray-600 hover:text-primary-700 font-sans text-sm font-medium transition-colors px-3 py-2">{{ cat.name }}</a>
-                {% endfor %}
+        <!-- Right Actions -->
+        <div class="flex items-center gap-4">
+            <!-- Search -->
+            <a href="{% url 'news:search' %}" class="text-slate-500 hover:text-primary transition-colors p-1" aria-label="Buscar">
+                <span class="material-symbols-outlined text-[20px]">search</span>
+            </a>
 
-                <span class="h-6 w-px bg-gray-300 mx-2"></span>
+            <!-- RSS (Optional) -->
+            <a href="{% url 'news:feed' %}" class="hidden sm:block text-slate-500 hover:text-orange-500 transition-colors p-1" aria-label="RSS Feed">
+                <span class="material-symbols-outlined text-[20px]">rss_feed</span>
+            </a>
 
-                <!-- Search -->
-                <a href="{% url 'news:search' %}"
-                   class="text-gray-500 hover:text-primary-600 transition-colors p-2"
-                   title="Buscar">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
-                    </svg>
-                </a>
+            <div class="h-4 w-[1px] bg-gray-200 dark:bg-gray-700 mx-1 hidden sm:block"></div>
 
-                <!-- RSS -->
-                <a href="{% url 'news:feed' %}"
-                   class="text-gray-400 hover:text-orange-500 transition-colors p-2"
-                   title="RSS Feed">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 5c7.18 0 13 5.82 13 13M6 11a7 7 0 017 7m-6 0a1 1 0 11-2 0 1 1 0 012 0z"/>
-                    </svg>
-                </a>
+            <!-- Link to School -->
+            <a href="{% url 'school:home' %}"
+               class="hidden sm:block font-ui text-xs font-semibold uppercase tracking-wider text-slate-900 dark:text-white hover:text-primary transition-colors">
+                Instituição
+            </a>
 
-                <span class="h-6 w-px bg-gray-300 mx-2"></span>
+            <!-- Subscribe Button (Scrolls to newsletter) -->
+            <button onclick="const el = document.getElementById('sidebar-newsletter') || document.getElementById('article-newsletter'); if(el) el.scrollIntoView({behavior: 'smooth'});"
+                    class="font-ui bg-primary text-white text-xs font-semibold px-4 py-2 rounded-full hover:bg-primary/90 transition-colors shadow-sm hover:shadow-primary/30">
+                Assinar
+            </button>
 
-                <!-- Link to School -->
-                <a href="{% url 'school:home' %}"
-                    class="text-sm font-sans font-medium text-primary-700 hover:text-primary-900 flex items-center gap-1">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
-                    </svg>
-                    Instituição
-                </a>
-            </div>
-
-            <!-- Mobile buttons -->
-            <div class="flex items-center gap-2 md:hidden">
-                <a href="{% url 'news:search' %}" class="text-gray-500 hover:text-primary-600 p-2">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
-                    </svg>
-                </a>
-                <button @click="mobileMenuOpen = !mobileMenuOpen"
-                    class="text-gray-800 hover:text-primary-600 p-2 focus:outline-none">
-                    <svg class="h-6 w-6" x-show="!mobileMenuOpen" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
-                    </svg>
-                    <svg class="h-6 w-6" x-cloak x-show="mobileMenuOpen" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
-                    </svg>
-                </button>
-            </div>
+            <!-- Mobile Menu Button -->
+            <button @click="mobileMenuOpen = !mobileMenuOpen" class="md:hidden text-slate-500 hover:text-primary transition-colors p-1">
+                <span class="material-symbols-outlined text-[24px]" x-show="!mobileMenuOpen">menu</span>
+                <span class="material-symbols-outlined text-[24px]" x-show="mobileMenuOpen" x-cloak>close</span>
+            </button>
         </div>
     </div>
 
     <!-- Mobile Menu -->
-    <div x-cloak x-show="mobileMenuOpen" x-transition:enter="transition ease-out duration-200"
-        x-transition:enter-start="opacity-0 -translate-y-4" x-transition:enter-end="opacity-100 translate-y-0"
-        x-transition:leave="transition ease-in duration-150" x-transition:leave-start="opacity-100 translate-y-0"
-        x-transition:leave-end="opacity-0 -translate-y-4"
-        class="md:hidden bg-white border-t border-gray-200 absolute w-full shadow-2xl">
-        <div class="px-4 pt-2 pb-6 space-y-1 flex flex-col font-sans">
+    <div x-cloak x-show="mobileMenuOpen" x-transition
+         class="md:hidden bg-background-light dark:bg-background-dark border-t border-gray-100 dark:border-gray-800 absolute w-full shadow-lg h-screen overflow-y-auto pb-20">
+        <div class="px-6 py-4 flex flex-col gap-4">
             <a href="{% url 'news:list' %}"
-                class="block px-3 py-3 text-base font-bold text-gray-900 hover:text-primary-600 uppercase tracking-wider">
-                Capa / Últimas
+               class="font-ui text-base font-bold text-slate-900 dark:text-white hover:text-primary">
+                Capa
             </a>
-
             {% for cat in nav_categories %}
             <a href="{% url 'news:category_detail' cat.slug %}"
-                class="block px-3 py-2.5 text-base text-gray-700 hover:text-primary-600 hover:bg-primary-50 rounded-lg transition-colors">
+               class="font-ui text-base font-medium text-slate-700 dark:text-slate-300 hover:text-primary pl-4 border-l-2 border-transparent hover:border-primary">
                 {{ cat.name }}
             </a>
             {% endfor %}
 
-            <div class="my-2 border-t border-gray-100"></div>
-
-            <a href="{% url 'news:search' %}"
-                class="block px-3 py-2.5 text-base text-gray-600 hover:text-primary-600 flex items-center gap-2">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
-                </svg>
-                Buscar Notícias
-            </a>
-
-            <a href="{% url 'news:feed' %}"
-                class="block px-3 py-2.5 text-base text-gray-600 hover:text-orange-500 flex items-center gap-2">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 5c7.18 0 13 5.82 13 13M6 11a7 7 0 017 7m-6 0a1 1 0 11-2 0 1 1 0 012 0z"/>
-                </svg>
-                RSS Feed
-            </a>
-
-            <div class="my-2 border-t border-gray-100"></div>
+            <div class="border-t border-gray-100 dark:border-gray-800 my-2"></div>
 
             <a href="{% url 'school:home' %}"
-                class="block px-3 py-3 text-center bg-gray-100 text-gray-600 font-medium hover:bg-gray-200 transition-colors rounded-lg">
-                Voltar para a Instituição
+               class="font-ui text-sm font-semibold uppercase tracking-wider text-slate-500 hover:text-primary">
+                Ir para o Site da Escola
             </a>
         </div>
     </div>
-</nav>
+</header>

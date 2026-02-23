@@ -1,64 +1,68 @@
-<aside class="space-y-8">
-  <!-- Mais Lidas -->
-  <div class="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm">
-    <h3 class="font-display font-bold text-gray-900 text-lg mb-4 pb-3 border-b border-gray-100">Mais Lidas</h3>
-    <div class="space-y-4">
-      {% for item in popular_articles %}
-      <a href="{% url 'news:article_detail' item.slug %}" class="flex gap-3 group">
-        {% if item.featured_image %}
-        <img src="{{ item.featured_image.url }}" alt="{{ item.title }}"
-             class="w-16 h-16 rounded-xl object-cover flex-shrink-0" loading="lazy">
-        {% else %}
-        <div class="w-16 h-16 rounded-xl bg-primary-100 flex-shrink-0"></div>
-        {% endif %}
-        <div>
-          <p class="text-sm font-semibold text-gray-800 group-hover:text-primary-600 transition-colors line-clamp-2">{{ item.title }}</p>
-          <p class="text-xs text-gray-400 mt-1">{{ item.view_count }} leituras</p>
+<div class="sticky top-24 space-y-12">
+    <!-- Trending / Latest Updates Timeline -->
+    <div>
+        <div class="flex items-center justify-between mb-8">
+            <h4 class="font-ui text-sm font-bold uppercase tracking-widest text-slate-900 dark:text-white">Trending Now</h4>
+            <span class="w-2 h-2 rounded-full bg-red-500 animate-pulse"></span>
         </div>
-      </a>
-      {% endfor %}
+        <div class="flex flex-col relative">
+            <!-- Timeline Line -->
+            <div class="absolute left-[7px] top-2 bottom-0 w-[1px] bg-gray-200 dark:bg-gray-800"></div>
+
+            {% for article in popular_articles %}
+            <div class="relative pl-8 pb-10 group last:pb-0">
+                <div class="absolute left-0 top-1.5 w-[15px] h-[15px] bg-background-light dark:bg-background-dark border-2 {% if forloop.first %}border-primary{% else %}border-slate-300 dark:border-slate-600 group-hover:border-primary{% endif %} rounded-full z-10 transition-colors"></div>
+                <span class="font-ui text-xs font-semibold {% if forloop.first %}text-primary{% else %}text-slate-500{% endif %} mb-1 block">
+                    {{ article.published_at|date:"H:i" }}
+                </span>
+                <a class="block group-hover:translate-x-1 transition-transform" href="{% url 'news:article_detail' article.slug %}">
+                    <h5 class="text-lg font-bold leading-snug text-slate-900 dark:text-white mb-1 group-hover:text-primary transition-colors">
+                        {{ article.title }}
+                    </h5>
+                    <p class="text-sm text-slate-500 leading-normal line-clamp-2">
+                        {{ article.excerpt|default:article.content|striptags|truncatewords:15 }}
+                    </p>
+                </a>
+            </div>
+            {% endfor %}
+        </div>
     </div>
-  </div>
 
-  <!-- Categorias -->
-  <div class="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm">
-    <h3 class="font-display font-bold text-gray-900 text-lg mb-4 pb-3 border-b border-gray-100">Categorias</h3>
-    <ul class="space-y-2">
-      {% for cat in top_categories %}
-      <li>
-        <a href="{% url 'news:category_detail' cat.slug %}"
-           class="flex justify-between items-center text-gray-700 hover:text-primary-600 transition-colors py-1">
-          <span class="font-medium">{{ cat.name }}</span>
-          <span class="text-xs bg-gray-100 text-gray-500 px-2 py-0.5 rounded-full">{{ cat.article_count }}</span>
-        </a>
-      </li>
-      {% endfor %}
-    </ul>
-  </div>
-
-  <!-- Tag Cloud -->
-  <div class="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm">
-    <h3 class="font-display font-bold text-gray-900 text-lg mb-4 pb-3 border-b border-gray-100">Tags</h3>
-    <div class="flex flex-wrap gap-2">
-      {% for t in top_tags %}
-      <a href="{% url 'news:tag_detail' t.slug %}"
-         class="px-3 py-1.5 bg-gray-100 text-gray-600 text-xs font-medium rounded-lg hover:bg-primary-100 hover:text-primary-700 transition-colors">
-        #{{ t.name }}
-      </a>
-      {% endfor %}
+    <!-- Newsletter Box -->
+    <div class="p-6 bg-slate-50 dark:bg-slate-900 rounded-lg border border-slate-100 dark:border-slate-800" id="sidebar-newsletter">
+        <div class="text-primary mb-3">
+            <span class="material-symbols-outlined text-[32px]">mail</span>
+        </div>
+        <h5 class="text-lg font-bold text-slate-900 dark:text-white mb-2 font-display">The Daily Briefing</h5>
+        <p class="text-sm text-slate-500 mb-4 leading-relaxed font-ui">
+            Essential news, expert analysis, and exclusive content delivered straight to your inbox.
+        </p>
+        <form hx-post="{% url 'news:newsletter_subscribe' %}" hx-target="#sidebar-newsletter" hx-swap="outerHTML" class="flex flex-col gap-3">
+            {% csrf_token %}
+            <input name="email" type="email" required placeholder="Email address"
+                   class="font-ui w-full px-4 py-2 rounded border border-gray-300 dark:border-gray-700 bg-white dark:bg-black text-sm focus:ring-1 focus:ring-primary focus:border-primary outline-none">
+            <button type="submit"
+                    class="font-ui w-full py-2 bg-slate-900 dark:bg-white text-white dark:text-black text-sm font-bold rounded hover:opacity-90 transition-opacity">
+                Sign Up
+            </button>
+        </form>
+        <p class="text-xs text-slate-400 mt-3 text-center font-ui">No spam, unsubscribe anytime.</p>
     </div>
-  </div>
 
-  <!-- RSS Feed -->
-  <div class="bg-primary-900 rounded-2xl p-6 text-white">
-    <h3 class="font-display font-bold text-lg mb-2">RSS Feed</h3>
-    <p class="text-primary-200 text-sm mb-4">Assine nosso feed para receber todas as atualizações.</p>
-    <a href="{% url 'news:feed' %}"
-       class="inline-flex items-center gap-2 bg-white text-primary-900 px-4 py-2 rounded-xl font-bold text-sm hover:bg-primary-50 transition-colors">
-      <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
-        <path d="M6.18 15.64a2.18 2.18 0 0 1 2.18 2.18C8.36 19.01 7.38 20 6.18 20C4.98 20 4 19.01 4 17.82a2.18 2.18 0 0 1 2.18-2.18M4 4.44A15.56 15.56 0 0 1 19.56 20h-2.83A12.73 12.73 0 0 0 4 7.27V4.44m0 5.66a9.9 9.9 0 0 1 9.9 9.9h-2.83A7.07 7.07 0 0 0 4 12.93V10.1z"/>
-      </svg>
-      Assinar Feed
-    </a>
-  </div>
-</aside>
+    <!-- Categories & Tags (Optional, kept for completeness but styled cleanly) -->
+    <div class="pt-8 border-t border-gray-100 dark:border-gray-800">
+        <h4 class="font-ui text-xs font-bold uppercase tracking-widest text-slate-500 mb-4">Explore</h4>
+        <div class="flex flex-wrap gap-2">
+            {% for cat in top_categories|slice:":5" %}
+            <a href="{% url 'news:category_detail' cat.slug %}" class="text-xs font-medium text-slate-600 dark:text-slate-400 hover:text-primary transition-colors bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded">
+                {{ cat.name }}
+            </a>
+            {% endfor %}
+            {% for tag in top_tags|slice:":5" %}
+            <a href="{% url 'news:tag_detail' tag.slug %}" class="text-xs font-medium text-slate-600 dark:text-slate-400 hover:text-primary transition-colors bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded">
+                #{{ tag.name }}
+            </a>
+            {% endfor %}
+        </div>
+    </div>
+</div>
