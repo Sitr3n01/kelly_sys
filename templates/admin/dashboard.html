@@ -1,0 +1,194 @@
+{% extends "admin/base_site.html" %}
+{% load i18n %}
+
+{% block content %}
+<div class="py-8">
+
+    <!-- Boas-vindas -->
+    <div
+        class="mb-8 p-6 bg-white dark:bg-gray-900 rounded-xl border border-gray-100 dark:border-gray-800 shadow-sm flex items-center justify-between">
+        <div>
+            <h1 class="text-2xl font-bold text-gray-900 dark:text-white">
+                {% blocktrans with name=request.user.get_full_name|default:request.user.username %}Bem-vindo, {{ name
+                }}{% endblocktrans %}
+            </h1>
+            <p class="text-sm text-gray-500 mt-1">
+                {% trans "Painel de controle — Kelly Sys" %}
+            </p>
+        </div>
+        <span
+            class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">
+            {{ request.user.get_role_display|default:"Staff" }}
+        </span>
+    </div>
+
+    <!-- Estatísticas em 2 colunas -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+
+        <!-- Portal Escolar -->
+        <div class="bg-white dark:bg-gray-900 rounded-xl border border-gray-100 dark:border-gray-800 shadow-sm p-6">
+            <h2 class="text-sm font-bold uppercase tracking-widest text-gray-400 mb-4 flex items-center gap-2">
+                <span class="material-symbols-outlined text-[18px]">school</span>
+                {% trans "Portal Escolar" %}
+            </h2>
+            <div class="grid grid-cols-3 gap-4">
+                <a href="{% url 'admin:hiring_jobposting_changelist' %}?status=open"
+                    class="flex flex-col items-center p-4 rounded-lg bg-blue-50 dark:bg-blue-900/20 hover:bg-blue-100 dark:hover:bg-blue-900/40 transition-colors">
+                    <span class="text-3xl font-bold text-blue-600 dark:text-blue-400">{{ open_jobs }}</span>
+                    <span class="text-xs text-gray-500 mt-1 text-center">{% trans "Vagas Abertas" %}</span>
+                </a>
+                <a href="{% url 'admin:hiring_application_changelist' %}?status=pending"
+                    class="flex flex-col items-center p-4 rounded-lg bg-amber-50 dark:bg-amber-900/20 hover:bg-amber-100 transition-colors">
+                    <span class="text-3xl font-bold text-amber-600 dark:text-amber-400">{{ pending_applications
+                        }}</span>
+                    <span class="text-xs text-gray-500 mt-1 text-center">{% trans "Candidaturas" %}</span>
+                </a>
+                <a href="{% url 'admin:contact_contactinquiry_changelist' %}?status=new"
+                    class="flex flex-col items-center p-4 rounded-lg bg-red-50 dark:bg-red-900/20 hover:bg-red-100 transition-colors">
+                    <span class="text-3xl font-bold text-red-600 dark:text-red-400">{{ unread_messages }}</span>
+                    <span class="text-xs text-gray-500 mt-1 text-center">{% trans "Mensagens" %}</span>
+                </a>
+            </div>
+        </div>
+
+        <!-- Portal de Notícias -->
+        <div class="bg-white dark:bg-gray-900 rounded-xl border border-gray-100 dark:border-gray-800 shadow-sm p-6">
+            <h2 class="text-sm font-bold uppercase tracking-widest text-gray-400 mb-4 flex items-center gap-2">
+                <span class="material-symbols-outlined text-[18px]">newspaper</span>
+                {% trans "Portal de Notícias" %}
+            </h2>
+            <div class="grid grid-cols-2 gap-4">
+                <a href="{% url 'admin:news_article_changelist' %}?status=published"
+                    class="flex flex-col items-center p-4 rounded-lg bg-green-50 dark:bg-green-900/20 hover:bg-green-100 transition-colors">
+                    <span class="text-3xl font-bold text-green-600 dark:text-green-400">{{ published_articles }}</span>
+                    <span class="text-xs text-gray-500 mt-1 text-center">{% trans "Publicados" %}</span>
+                </a>
+                <a href="{% url 'admin:news_article_changelist' %}?status=draft"
+                    class="flex flex-col items-center p-4 rounded-lg bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 transition-colors">
+                    <span class="text-3xl font-bold text-gray-600 dark:text-gray-400">{{ draft_articles }}</span>
+                    <span class="text-xs text-gray-500 mt-1 text-center">{% trans "Rascunhos" %}</span>
+                </a>
+                <a href="{% url 'admin:news_newslettersubscription_changelist' %}?is_active=True"
+                    class="flex flex-col items-center p-4 rounded-lg bg-indigo-50 dark:bg-indigo-900/20 hover:bg-indigo-100 transition-colors">
+                    <span class="text-3xl font-bold text-indigo-600 dark:text-indigo-400">{{ newsletter_subscribers
+                        }}</span>
+                    <span class="text-xs text-gray-500 mt-1 text-center">{% trans "Assinantes" %}</span>
+                </a>
+                <a href="{% url 'admin:news_comment_changelist' %}?is_active=False"
+                    class="flex flex-col items-center p-4 rounded-lg bg-orange-50 dark:bg-orange-900/20 hover:bg-orange-100 transition-colors">
+                    <span class="text-3xl font-bold text-orange-600 dark:text-orange-400">{{ pending_comments }}</span>
+                    <span class="text-xs text-gray-500 mt-1 text-center">{% trans "Comentários para revisar" %}</span>
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Ações Rápidas -->
+    <div class="bg-white dark:bg-gray-900 rounded-xl border border-gray-100 dark:border-gray-800 shadow-sm p-6 mb-8">
+        <h2 class="text-sm font-bold uppercase tracking-widest text-gray-400 mb-4">{% trans "Ações Rápidas" %}</h2>
+        <div class="flex flex-wrap gap-3">
+            <a href="{% url 'admin:news_article_add' %}"
+                class="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-semibold hover:bg-blue-700 transition-colors">
+                <span class="material-symbols-outlined text-[16px]">add</span>
+                {% trans "Novo Artigo" %}
+            </a>
+            <a href="{% url 'admin:hiring_jobposting_add' %}"
+                class="inline-flex items-center gap-2 px-4 py-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 rounded-lg text-sm font-semibold hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+                <span class="material-symbols-outlined text-[16px]">work</span>
+                {% trans "Nova Vaga" %}
+            </a>
+            <a href="{% url 'admin:hiring_application_changelist' %}"
+                class="inline-flex items-center gap-2 px-4 py-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 rounded-lg text-sm font-semibold hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+                <span class="material-symbols-outlined text-[16px]">description</span>
+                {% trans "Ver Candidaturas" %}
+            </a>
+            <a href="{% url 'admin:contact_contactinquiry_changelist' %}"
+                class="inline-flex items-center gap-2 px-4 py-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 rounded-lg text-sm font-semibold hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+                <span class="material-symbols-outlined text-[16px]">contact_mail</span>
+                {% trans "Mensagens" %}
+            </a>
+        </div>
+    </div>
+
+    <!-- Atividade Recente — 2 colunas -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+
+        <!-- Últimos Artigos -->
+        <div
+            class="bg-white dark:bg-gray-900 rounded-xl border border-gray-100 dark:border-gray-800 shadow-sm overflow-hidden">
+            <div class="px-6 py-4 border-b border-gray-100 dark:border-gray-800 flex items-center justify-between">
+                <h2 class="text-sm font-bold text-gray-700 dark:text-gray-300">{% trans "Últimos Artigos" %}</h2>
+                <a href="{% url 'admin:news_article_changelist' %}" class="text-xs text-blue-600 hover:underline">{%
+                    trans "Ver todos" %}</a>
+            </div>
+            <table class="w-full text-sm">
+                {% for article in recent_articles %}
+                <tr
+                    class="border-b border-gray-50 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
+                    <td class="px-6 py-3">
+                        <a href="{% url 'admin:news_article_change' article.pk %}"
+                            class="font-medium text-gray-900 dark:text-white hover:text-blue-600 line-clamp-1">{{
+                            article.title }}</a>
+                        <div class="text-xs text-gray-400 mt-0.5">{{
+                            article.author.get_full_name|default:article.author.username }} · {{
+                            article.published_at|date:"d/m/Y" }}</div>
+                    </td>
+                    <td class="px-6 py-3 text-right">
+                        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold
+              {% if article.status == 'published' %}bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300
+              {% elif article.status == 'draft' %}bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400
+              {% else %}bg-orange-100 text-orange-700{% endif %}">
+                            {{ article.get_status_display }}
+                        </span>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="2" class="px-6 py-6 text-center text-gray-400 text-sm">{% trans "Nenhum artigo
+                        publicado ainda." %}</td>
+                </tr>
+                {% endfor %}
+            </table>
+        </div>
+
+        <!-- Últimas Candidaturas -->
+        <div
+            class="bg-white dark:bg-gray-900 rounded-xl border border-gray-100 dark:border-gray-800 shadow-sm overflow-hidden">
+            <div class="px-6 py-4 border-b border-gray-100 dark:border-gray-800 flex items-center justify-between">
+                <h2 class="text-sm font-bold text-gray-700 dark:text-gray-300">{% trans "Últimas Candidaturas" %}</h2>
+                <a href="{% url 'admin:hiring_application_changelist' %}"
+                    class="text-xs text-blue-600 hover:underline">{% trans "Ver todas" %}</a>
+            </div>
+            <table class="w-full text-sm">
+                {% for app in recent_applications %}
+                <tr
+                    class="border-b border-gray-50 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
+                    <td class="px-6 py-3">
+                        <a href="{% url 'admin:hiring_application_change' app.pk %}"
+                            class="font-medium text-gray-900 dark:text-white hover:text-blue-600">{{ app.first_name }}
+                            {{ app.last_name }}</a>
+                        <div class="text-xs text-gray-400 mt-0.5">{{ app.job.title }} · {{ app.created_at|date:"d/m/Y"
+                            }}</div>
+                    </td>
+                    <td class="px-6 py-3 text-right">
+                        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold
+              {% if app.status == 'pending' %}bg-yellow-100 text-yellow-800
+              {% elif app.status == 'reviewing' %}bg-blue-100 text-blue-800
+              {% elif app.status == 'approved' %}bg-green-100 text-green-800
+              {% else %}bg-red-100 text-red-800{% endif %}">
+                            {{ app.get_status_display }}
+                        </span>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="2" class="px-6 py-6 text-center text-gray-400 text-sm">{% trans "Nenhuma candidatura
+                        ainda." %}</td>
+                </tr>
+                {% endfor %}
+            </table>
+        </div>
+    </div>
+
+</div>
+{% endblock %}

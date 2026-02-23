@@ -1,0 +1,18 @@
+{% comment %}
+Partial para o botão de like com contagem.
+Context: article, like_count, is_liked (bool)
+{% endcomment %}
+<div id="like-btn-{{ article.pk }}" class="flex flex-col items-center gap-1">
+    <button
+        hx-post="{% url 'news:toggle_like' article.pk %}"
+        hx-target="#like-btn-{{ article.pk }}"
+        hx-swap="outerHTML"
+        {% if not user.is_authenticated %}
+        onclick="window.location='{% url 'accounts:login' %}?next={{ request.path|urlencode }}'; return false;"
+        {% endif %}
+        class="group flex h-10 w-10 items-center justify-center rounded-full border {% if is_liked %}border-primary text-primary bg-primary/5{% else %}border-slate-200 bg-white dark:border-slate-700 dark:bg-background-dark dark:text-slate-400{% endif %} shadow-sm hover:border-primary/50 hover:text-primary transition-all outline-none"
+        :aria-label="t('Curtir', 'Like')">
+        <span class="material-symbols-outlined text-[20px] {% if is_liked %}filled{% endif %}">thumb_up</span>
+    </button>
+    <span class="text-xs font-bold text-slate-500 font-ui">{{ like_count }}<span class="sr-only"> likes</span></span>
+</div>

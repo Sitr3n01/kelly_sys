@@ -1,0 +1,65 @@
+{% extends 'base_news.html' %}
+
+{% block title %}Login - The Chronicle{% endblock %}
+
+{% block content %}
+<div class="max-w-[480px] mx-auto px-6 xl:px-0 py-24 font-display">
+    <div class="p-8 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-3xl shadow-sm">
+        <h1 class="text-3xl font-bold tracking-tight text-slate-900 dark:text-white mb-2 text-center"
+            x-text="t('Acessar Conta', 'Log In')">Acessar Conta</h1>
+        <p class="text-center text-slate-500 font-ui text-sm mb-8"
+            x-text="t('Bem-vindo de volta! Insira suas credenciais.', 'Welcome back! Enter your credentials.')">
+            Bem-vindo! Insira suas credenciais.</p>
+
+        <form method="post" action="{% url 'accounts:login' %}" class="space-y-5">
+            {% csrf_token %}
+            {% if form.non_field_errors %}
+            <div
+                class="p-4 rounded-lg bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 font-ui text-sm mb-4">
+                {{ form.non_field_errors }}
+            </div>
+            {% endif %}
+
+            <input type="hidden" name="next" value="{{ request.GET.next|default:'/news/' }}">
+
+            <div>
+                <label for="{{ form.username.id_for_label }}"
+                    class="block text-sm font-bold text-slate-700 dark:text-slate-300 font-ui mb-2"
+                    x-text="t('Usuário', 'Username')">Usuário</label>
+                <input type="text" name="{{ form.username.name }}" id="{{ form.username.id_for_label }}" required
+                    autofocus
+                    class="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-transparent px-4 py-3 text-slate-900 dark:text-white focus:border-primary focus:ring-1 focus:ring-primary font-ui transition-all"
+                    placeholder="Seu nome de usuário">
+                {% if form.username.errors %}
+                <p class="mt-1 text-sm text-red-500 font-ui">{{ form.username.errors.0 }}</p>
+                {% endif %}
+            </div>
+
+            <div>
+                <label for="{{ form.password.id_for_label }}"
+                    class="block text-sm font-bold text-slate-700 dark:text-slate-300 font-ui mb-2"
+                    x-text="t('Senha', 'Password')">Senha</label>
+                <input type="password" name="{{ form.password.name }}" id="{{ form.password.id_for_label }}" required
+                    class="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-transparent px-4 py-3 text-slate-900 dark:text-white focus:border-primary focus:ring-1 focus:ring-primary font-ui transition-all"
+                    placeholder="Sua senha secreta">
+                {% if form.password.errors %}
+                <p class="mt-1 text-sm text-red-500 font-ui">{{ form.password.errors.0 }}</p>
+                {% endif %}
+            </div>
+
+            <button type="submit"
+                class="w-full py-3.5 px-4 bg-primary text-white font-bold rounded-xl font-ui shadow-sm hover:bg-primary/90 hover:shadow-primary/30 transition-all flex justify-center items-center">
+                <span x-text="t('Entrar', 'Log in')">Entrar</span>
+            </button>
+        </form>
+
+        <div class="mt-8 pt-6 border-t border-slate-100 dark:border-slate-800 text-center">
+            <p class="text-sm font-ui text-slate-500">
+                <span x-text="t('Não tem uma conta?', 'Don\'t have an account?')">Não tem uma conta?</span>
+                <a href="{% url 'accounts:register' %}" class="font-bold text-primary hover:underline ml-1"
+                    x-text="t('Criar conta', 'Sign up')">Criar conta</a>
+            </p>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,4 +1,5 @@
-<header x-data="{ mobileMenuOpen: false }" class="sticky top-0 z-50 bg-background-light/95 dark:bg-background-dark/95 backdrop-blur-sm border-b border-gray-100 dark:border-gray-800 transition-colors duration-200">
+<header x-data="{ mobileMenuOpen: false }"
+    class="sticky top-0 z-50 bg-background-light/95 dark:bg-background-dark/95 backdrop-blur-sm border-b border-gray-100 dark:border-gray-800 transition-colors duration-200">
     <div class="max-w-[1200px] mx-auto px-6 h-16 flex items-center justify-between">
         <!-- Logo Section -->
         <div class="flex items-center gap-3">
@@ -6,54 +7,152 @@
                 <div class="text-primary group-hover:text-primary/80 transition-colors">
                     <span class="material-symbols-outlined text-[28px]">newspaper</span>
                 </div>
-                <h1 class="text-2xl font-bold tracking-tight text-slate-900 dark:text-white group-hover:text-primary transition-colors">
+                <h1
+                    class="text-2xl font-bold tracking-tight text-slate-900 dark:text-white group-hover:text-primary transition-colors">
                     {{ current_site.name|default:"The Chronicle" }}
                 </h1>
             </a>
         </div>
 
-        <!-- Center Navigation (Desktop) -->
-        <nav class="hidden md:flex items-center gap-8">
-            <a href="{% url 'news:list' %}"
-               class="font-ui text-sm font-medium text-slate-900 dark:text-slate-200 hover:text-primary transition-colors">
-                Capa
-            </a>
-            {% for cat in nav_categories %}
-            <a href="{% url 'news:category_detail' cat.slug %}"
-               class="font-ui text-sm font-medium text-slate-900 dark:text-slate-200 hover:text-primary transition-colors">
-                {{ cat.name }}
-            </a>
-            {% endfor %}
-        </nav>
+        <!-- Center Navigation (Desktop) - Replaced/Removed as requested -->
+        <div class="flex-grow"></div>
 
         <!-- Right Actions -->
-        <div class="flex items-center gap-4">
+        <div class="flex items-center gap-3 md:gap-4">
+            <!-- Explorar (Moved to right side) -->
+            <div x-data="{ openExplorar: false }" class="relative hidden md:block" @mouseenter="openExplorar = true"
+                @mouseleave="openExplorar = false">
+                <button @click="openExplorar = !openExplorar"
+                    class="flex items-center gap-1 font-ui text-sm font-medium text-slate-500 hover:text-primary transition-colors focus:outline-none">
+                    <span x-text="t('Explorar', 'Explore')">Explorar</span>
+                    <span class="material-symbols-outlined text-[18px] transition-transform duration-200"
+                        :class="{'rotate-180': openExplorar}">expand_more</span>
+                </button>
+
+                <div x-show="openExplorar" x-transition x-cloak
+                    class="absolute top-8 right-0 w-48 bg-white dark:bg-slate-900 rounded-lg shadow-xl border border-slate-100 dark:border-slate-800 py-2 z-[60]">
+                    {% for cat in nav_categories %}
+                    <a href="{% url 'news:category_detail' cat.slug %}"
+                        class="block px-4 py-2 font-ui text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-primary transition-colors">
+                        {{ cat.name }}
+                    </a>
+                    {% endfor %}
+                    <div class="border-t border-slate-100 dark:border-slate-800 my-1"></div>
+                    <a href="{% url 'news:search' %}"
+                        class="block px-4 py-2 font-ui text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-primary transition-colors flex items-center justify-between">
+                        <span x-text="t('Mais Tópicos', 'More Topics')">Mais Tópicos</span>
+                        <span class="material-symbols-outlined text-[16px]">arrow_forward</span>
+                    </a>
+                </div>
+            </div>
+
             <!-- Search -->
-            <a href="{% url 'news:search' %}" class="text-slate-500 hover:text-primary transition-colors p-1" aria-label="Buscar">
+            <a href="{% url 'news:search' %}" class="text-slate-500 hover:text-primary transition-colors p-1"
+                :aria-label="t('Buscar', 'Search')">
                 <span class="material-symbols-outlined text-[20px]">search</span>
             </a>
 
-            <!-- RSS (Optional) -->
-            <a href="{% url 'news:feed' %}" class="hidden sm:block text-slate-500 hover:text-orange-500 transition-colors p-1" aria-label="RSS Feed">
-                <span class="material-symbols-outlined text-[20px]">rss_feed</span>
-            </a>
+            <!-- Theme Toggle -->
+            <button @click="theme = theme === 'dark' ? 'light' : 'dark'"
+                class="text-slate-500 hover:text-primary transition-colors p-1 flex items-center outline-none"
+                :aria-label="theme === 'dark' ? t('Modo Claro', 'Light Mode') : t('Modo Escuro', 'Dark Mode')">
+                <span class="material-symbols-outlined text-[20px]" x-show="theme === 'dark'" x-cloak>light_mode</span>
+                <span class="material-symbols-outlined text-[20px]" x-show="theme !== 'dark'">dark_mode</span>
+            </button>
 
-            <div class="h-4 w-[1px] bg-gray-200 dark:bg-gray-700 mx-1 hidden sm:block"></div>
+            <!-- Language Toggle -->
+            <button @click="lang = lang === 'pt' ? 'en' : 'pt'"
+                class="font-ui text-xs font-bold text-slate-500 hover:text-primary transition-colors p-1 flex items-center outline-none">
+                <span x-text="lang === 'pt' ? 'EN' : 'PT'"></span>
+            </button>
+
+            <div class="h-4 w-[1px] bg-gray-200 dark:bg-gray-700 mx-1 hidden lg:block"></div>
 
             <!-- Link to School -->
             <a href="{% url 'school:home' %}"
-               class="hidden sm:block font-ui text-xs font-semibold uppercase tracking-wider text-slate-900 dark:text-white hover:text-primary transition-colors">
-                Instituição
+                class="hidden lg:block font-ui text-xs font-semibold uppercase tracking-wider text-slate-900 dark:text-white hover:text-primary transition-colors"
+                x-text="t('Escola de Comunicação', 'School of Communication')">
+                Escola de Comunicação
             </a>
 
             <!-- Subscribe Button (Scrolls to newsletter) -->
-            <button onclick="const el = document.getElementById('sidebar-newsletter') || document.getElementById('article-newsletter'); if(el) el.scrollIntoView({behavior: 'smooth'});"
-                    class="font-ui bg-primary text-white text-xs font-semibold px-4 py-2 rounded-full hover:bg-primary/90 transition-colors shadow-sm hover:shadow-primary/30">
+            <button
+                onclick="const el = document.getElementById('sidebar-newsletter') || document.getElementById('article-newsletter'); if(el) el.scrollIntoView({behavior: 'smooth'});"
+                class="font-ui bg-primary text-white text-xs font-semibold px-4 py-2 rounded-full hover:bg-primary/90 transition-colors shadow-sm hover:shadow-primary/30"
+                x-text="t('Assinar', 'Subscribe')">
                 Assinar
             </button>
 
+            <!-- User Account Dropdown -->
+            <div x-data="{ openUser: false }" class="relative hidden md:block" @mouseenter="openUser = true"
+                @mouseleave="openUser = false">
+                <button @click="openUser = !openUser"
+                    class="flex items-center gap-2 font-ui text-sm font-bold text-slate-700 dark:text-slate-300 hover:text-primary transition-colors focus:outline-none">
+                    {% if request.user.is_authenticated %}
+                    <div
+                        class="h-8 w-8 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold shadow-sm">
+                        {{ request.user.first_name|default:request.user.username|make_list|first|upper }}
+                    </div>
+                    {% else %}
+                    <div
+                        class="h-8 w-8 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-500 hover:text-primary transition-colors">
+                        <span class="material-symbols-outlined text-[20px]">person</span>
+                    </div>
+                    {% endif %}
+                </button>
+
+                <div x-show="openUser" x-transition x-cloak
+                    class="absolute top-10 right-0 w-56 bg-white dark:bg-slate-900 rounded-lg shadow-xl border border-slate-100 dark:border-slate-800 py-2 z-[60]">
+                    {% if request.user.is_authenticated %}
+                    <div class="px-4 py-3 border-b border-slate-100 dark:border-slate-800 mb-1">
+                        <p class="text-sm font-bold text-slate-900 dark:text-white truncate">{{
+                            request.user.get_full_name|default:request.user.username }}</p>
+                        <p class="text-xs text-slate-500 font-ui truncate">{{ request.user.email }}</p>
+                    </div>
+                    <a href="{% url 'news:user_dashboard' %}"
+                        class="px-4 py-2 font-ui text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-primary transition-colors flex items-center gap-2">
+                        <span class="material-symbols-outlined text-[18px]">person</span>
+                        <span x-text="t('Minha Conta', 'My Account')">Minha Conta</span>
+                    </a>
+                    <a href="{% url 'news:user_dashboard' %}?tab=saved"
+                        class="px-4 py-2 font-ui text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-primary transition-colors flex items-center gap-2">
+                        <span class="material-symbols-outlined text-[18px]">bookmark</span>
+                        <span x-text="t('Artigos Salvos', 'Saved Articles')">Artigos Salvos</span>
+                    </a>
+                    <div class="border-t border-slate-100 dark:border-slate-800 my-1"></div>
+                    <form action="{% url 'accounts:logout' %}?next={{ request.path }}" method="post">
+                        {% csrf_token %}
+                        <button type="submit"
+                            class="w-full text-left px-4 py-2 font-ui text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors flex items-center gap-2">
+                            <span class="material-symbols-outlined text-[18px]">logout</span>
+                            <span x-text="t('Sair', 'Logout')">Sair</span>
+                        </button>
+                    </form>
+                    {% else %}
+                    <div class="p-4 text-center border-b border-slate-100 dark:border-slate-800">
+                        <span
+                            class="material-symbols-outlined text-3xl text-slate-300 dark:text-slate-600 mb-2">account_circle</span>
+                        <p class="text-sm font-bold text-slate-900 dark:text-white mb-1"
+                            x-text="t('Acesse sua Conta', 'Access your Account')">Acesse sua Conta</p>
+                        <p class="text-xs text-slate-500 font-ui mb-2"
+                            x-text="t('Faça login para salvar artigos e interagir!', 'Log in to save articles and interact!')">
+                            Faça login para salvar artigos!</p>
+                    </div>
+                    <a href="{% url 'accounts:login' %}?next={{ request.path }}"
+                        class="block px-4 py-3 font-ui text-sm font-bold text-primary hover:bg-primary/5 transition-colors text-center border-b border-slate-100 dark:border-slate-800">
+                        <span x-text="t('Fazer Login', 'Log In')">Fazer Login</span>
+                    </a>
+                    <a href="{% url 'accounts:register' %}"
+                        class="block px-4 py-3 font-ui text-sm font-bold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-primary transition-colors text-center">
+                        <span x-text="t('Criar Conta', 'Sign Up')">Criar Conta</span>
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+
             <!-- Mobile Menu Button -->
-            <button @click="mobileMenuOpen = !mobileMenuOpen" class="md:hidden text-slate-500 hover:text-primary transition-colors p-1">
+            <button @click="mobileMenuOpen = !mobileMenuOpen"
+                class="md:hidden text-slate-500 hover:text-primary transition-colors p-1">
                 <span class="material-symbols-outlined text-[24px]" x-show="!mobileMenuOpen">menu</span>
                 <span class="material-symbols-outlined text-[24px]" x-show="mobileMenuOpen" x-cloak>close</span>
             </button>
@@ -62,24 +161,34 @@
 
     <!-- Mobile Menu -->
     <div x-cloak x-show="mobileMenuOpen" x-transition
-         class="md:hidden bg-background-light dark:bg-background-dark border-t border-gray-100 dark:border-gray-800 absolute w-full shadow-lg h-screen overflow-y-auto pb-20">
+        class="md:hidden bg-background-light dark:bg-background-dark border-t border-gray-100 dark:border-gray-800 absolute w-full shadow-lg h-screen overflow-y-auto pb-20">
         <div class="px-6 py-4 flex flex-col gap-4">
             <a href="{% url 'news:list' %}"
-               class="font-ui text-base font-bold text-slate-900 dark:text-white hover:text-primary">
-                Capa
+                class="font-ui text-base font-bold text-slate-900 dark:text-white hover:text-primary"
+                x-text="t('Início', 'Home')">
+                Início
             </a>
+
+            <div class="font-ui text-xs font-bold text-slate-400 uppercase tracking-wider mt-4 mb-2"
+                x-text="t('Explorar', 'Explore')">Explorar</div>
             {% for cat in nav_categories %}
             <a href="{% url 'news:category_detail' cat.slug %}"
-               class="font-ui text-base font-medium text-slate-700 dark:text-slate-300 hover:text-primary pl-4 border-l-2 border-transparent hover:border-primary">
+                class="font-ui text-base font-medium text-slate-700 dark:text-slate-300 hover:text-primary pl-4 border-l-2 border-transparent hover:border-primary">
                 {{ cat.name }}
             </a>
             {% endfor %}
+            <a href="{% url 'news:search' %}"
+                class="font-ui text-base font-medium text-slate-700 dark:text-slate-300 hover:text-primary pl-4 border-l-2 border-transparent hover:border-primary flex items-center justify-between pr-4">
+                <span x-text="t('Mais Tópicos', 'More Topics')">Mais Tópicos</span>
+                <span class="material-symbols-outlined text-[20px]">arrow_forward</span>
+            </a>
 
             <div class="border-t border-gray-100 dark:border-gray-800 my-2"></div>
 
             <a href="{% url 'school:home' %}"
-               class="font-ui text-sm font-semibold uppercase tracking-wider text-slate-500 hover:text-primary">
-                Ir para o Site da Escola
+                class="font-ui text-sm font-semibold uppercase tracking-wider text-slate-500 hover:text-primary"
+                x-text="t('Ir para a Escola de Comunicação', 'Go to School of Communication')">
+                Ir para a Escola de Comunicação
             </a>
         </div>
     </div>

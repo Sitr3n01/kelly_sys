@@ -80,32 +80,44 @@ Painel administrativo único (Django Unfold) para gerenciar ambos.
 
 ---
 
-### Fase 5: Portal de Notícias — Funcionalidades Completas 🔄
+### Fase 5: Portal de Notícias — Funcionalidades Completas ✅
 | # | Tarefa | Status |
 |---|--------|--------|
-| 5A | Correções backend: `get_absolute_url`, `F()` view_count, `select_related`, `utils.py` | ⬜ Pendente |
-| 5B | Model `NewsletterSubscription` + form + view + admin | ⬜ Pendente |
-| 5C | Novas views: tag, autor, busca, arquivo, load-more HTMX, relacionados | ⬜ Pendente |
-| 5D | RSS Feeds (`LatestArticlesFeed`, `CategoryFeed`) | ⬜ Pendente |
-| 5E | SEO: Open Graph, Twitter Cards, JSON-LD, canonical, RSS link | ⬜ Pendente |
-| 5F | Partials reutilizáveis: card, sidebar, grid, paginação, newsletter HTMX | ⬜ Pendente |
-| 5G | Páginas novas: tag_detail, author_detail, search, archive | ⬜ Pendente |
-| 5H | Atualização templates existentes: list, detail, category, navbar | ⬜ Pendente |
-| 5I | Admin aprimorado: Unfold ModelAdmin, fieldsets, actions | ⬜ Pendente |
-| 5J | Context processor: categorias na navegação | ⬜ Pendente |
+| 5A | Correções backend: `get_absolute_url`, `F()` view_count, `select_related`, `utils.py` | ✅ Concluído |
+| 5B | Model `NewsletterSubscription` + form + view + admin | ✅ Concluído |
+| 5C | Novas views: tag, autor, busca, arquivo, load-more HTMX, relacionados | ✅ Concluído |
+| 5D | RSS Feeds (`LatestArticlesFeed`, `CategoryFeed`) | ✅ Concluído |
+| 5E | SEO: Open Graph, Twitter Cards, JSON-LD, canonical, RSS link | ✅ Concluído |
+| 5F | Partials reutilizáveis: card, sidebar, grid, paginação, newsletter, like_button, comments_list | ✅ Concluído |
+| 5G | Páginas novas: tag_detail, author_detail, search, archive | ✅ Concluído |
+| 5H | Atualização templates existentes: list, detail, category, navbar | ✅ Concluído |
+| 5I | Admin aprimorado: Unfold ModelAdmin, fieldsets, actions, Comment/Like/Bookmark | ✅ Concluído |
+| 5J | Context processor: categorias na navegação | ✅ Concluído |
+| 5K | Sistema de comentários e likes (add_comment, delete_comment, toggle_like) | ✅ Concluído |
+| 5L | Autenticação e dashboard de usuário (login, register, bookmarks) | ✅ Concluído |
+| 5M | Bug fixes revisão Claude: unique_per_site newsletter, sidebar filtro site, CategoryFeed 404 | ✅ Concluído |
 
-### Fase 6: Portal de Notícias — Design (Google Stitch) ⬜
+### Fase 6: Admin Enhancement — Painel Unificado Bilíngue 🔄
 | # | Tarefa | Status |
 |---|--------|--------|
-| 6.1 | Exportar template Google Stitch | ⬜ Pendente |
-| 6.2 | Adaptar paleta de cores e tipografia | ⬜ Pendente |
-| 6.3 | Implementar layout de componentes do Stitch | ⬜ Pendente |
-| 6.4 | Responsividade mobile | ⬜ Pendente |
+| 6A | Migrar todos os admin.py para `unfold.admin.ModelAdmin` (school, hiring, contact, accounts, common) | ⬜ Pendente |
+| 6B | Configurar `UNFOLD` settings: branding, sidebar agrupada por portal, cores `#1152d4` | ⬜ Pendente |
+| 6C | Dashboard customizado: cards de stats por portal, ações rápidas, atividade recente | ⬜ Pendente |
+| 6D | i18n PT/BR: `LocaleMiddleware`, `LANGUAGES`, path `i18n/` | ⬜ Pendente |
+| 6E | Melhorar admin models: fieldsets, actions, badges de role (school, hiring, contact, accounts) | ⬜ Pendente |
 
-### Fase 7: Site da Escola — Funcionalidades e Design ⬜
+### Fase 7: Portal de Notícias — Design (Google Stitch) ⬜
 | # | Tarefa | Status |
 |---|--------|--------|
-| 7.1 | (A definir após portal de notícias) | ⬜ Pendente |
+| 7.1 | Exportar template Google Stitch | ⬜ Pendente |
+| 7.2 | Adaptar paleta de cores e tipografia | ⬜ Pendente |
+| 7.3 | Implementar layout de componentes do Stitch | ⬜ Pendente |
+| 7.4 | Responsividade mobile | ⬜ Pendente |
+
+### Fase 8: Site da Escola — Funcionalidades e Design ⬜
+| # | Tarefa | Status |
+|---|--------|--------|
+| 8.1 | (A definir após admin enhancement) | ⬜ Pendente |
 
 ---
 
@@ -124,23 +136,26 @@ Painel administrativo único (Django Unfold) para gerenciar ambos.
 
 ---
 
-## Bugs Conhecidos (Fase 5A)
+## Bugs Resolvidos (Revisão Claude — Fase 5M)
 
-| Bug | Impacto | Fix |
-|-----|---------|-----|
-| `Article` sem `get_absolute_url()` | Sitemap quebra | Adicionar método |
-| `view_count` com `.save()` | Race condition em acessos simultâneos | Usar `F()` expression |
-| Views sem `select_related` | N+1 queries em todas as listagens | Adicionar em todas as views |
-| `feeds.py` placeholder | RSS não funciona | Implementar feeds completos |
-| Tags não-clicáveis | UX quebrada no article_detail | Criar view + URL de tag |
-| Newsletter sem backend | Formulário enganoso | Criar model + view |
+| Bug | Fix Aplicado |
+|-----|-------------|
+| `NewsletterSubscription.email` unique global | `unique_together = [['email', 'site']]` + migration 0005 |
+| `get_sidebar_context()` sem filtro de site | `Article.on_site` em vez de `Article.objects` |
+| `CategoryFeed` levantava 500 | `get_object_or_404(Category, slug=slug)` |
+| Comments hardcoded no article_detail | Loop real `{% for comment in comments %}` + form autenticado |
+| Like count "12" hardcoded | `{{ like_count }}` real + view `toggle_like` + partial `like_button.html` |
+| Comment/Like/Bookmark sem admin | `CommentAdmin`, `ArticleLikeAdmin`, `ArticleBookmarkAdmin` registrados |
+| Sem endpoint de post de comentário | View `add_comment` + URL + formulário no template |
+| `user_dashboard` query ineficiente | `Article.objects.filter(bookmarks__user=user)` direto |
+| `toggle_bookmark` usando HTTP_REFERER | Parâmetro `?source=dashboard` |
 
 ---
 
 ## Estado Atual
 
-- **Fase:** 5 — Portal de Notícias (Funcionalidades Completas)
-- **Tarefa ativa:** Fases 5A-5J (todas no GEMINI.md)
+- **Fase:** 6 — Admin Enhancement (Painel Unificado Bilíngue)
+- **Tarefa ativa:** Fases 6A-6E no GEMINI.md
 - **Última atualização:** 2026-02-23
-- **Próximo passo:** Gemini executa Fases 5A-5J
-- **Bloqueios:** Template Google Stitch pendente para Fase 6
+- **Próximo passo:** Gemini executa Fases 6A-6E; depois Google Stitch para design do portal
+- **Bloqueios:** Nenhum

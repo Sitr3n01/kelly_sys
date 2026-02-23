@@ -2,7 +2,9 @@
     <!-- Trending / Latest Updates Timeline -->
     <div>
         <div class="flex items-center justify-between mb-8">
-            <h4 class="font-ui text-sm font-bold uppercase tracking-widest text-slate-900 dark:text-white">Trending Now</h4>
+            <h4 class="font-ui text-sm font-bold uppercase tracking-widest text-slate-900 dark:text-white"
+                x-text="t('Em Alta', 'Trending Now')">Trending Now
+            </h4>
             <span class="w-2 h-2 rounded-full bg-red-500 animate-pulse"></span>
         </div>
         <div class="flex flex-col relative">
@@ -11,12 +13,17 @@
 
             {% for article in popular_articles %}
             <div class="relative pl-8 pb-10 group last:pb-0">
-                <div class="absolute left-0 top-1.5 w-[15px] h-[15px] bg-background-light dark:bg-background-dark border-2 {% if forloop.first %}border-primary{% else %}border-slate-300 dark:border-slate-600 group-hover:border-primary{% endif %} rounded-full z-10 transition-colors"></div>
-                <span class="font-ui text-xs font-semibold {% if forloop.first %}text-primary{% else %}text-slate-500{% endif %} mb-1 block">
+                <div
+                    class="absolute left-0 top-1.5 w-[15px] h-[15px] bg-background-light dark:bg-background-dark border-2 {% if forloop.first %}border-primary{% else %}border-slate-300 dark:border-slate-600 group-hover:border-primary{% endif %} rounded-full z-10 transition-colors">
+                </div>
+                <span
+                    class="font-ui text-xs font-semibold {% if forloop.first %}text-primary{% else %}text-slate-500{% endif %} mb-1 block">
                     {{ article.published_at|date:"H:i" }}
                 </span>
-                <a class="block group-hover:translate-x-1 transition-transform" href="{% url 'news:article_detail' article.slug %}">
-                    <h5 class="text-lg font-bold leading-snug text-slate-900 dark:text-white mb-1 group-hover:text-primary transition-colors">
+                <a class="block group-hover:translate-x-1 transition-transform"
+                    href="{% url 'news:article_detail' article.slug %}">
+                    <h5
+                        class="text-lg font-bold leading-snug text-slate-900 dark:text-white mb-1 group-hover:text-primary transition-colors">
                         {{ article.title }}
                     </h5>
                     <p class="text-sm text-slate-500 leading-normal line-clamp-2">
@@ -29,37 +36,47 @@
     </div>
 
     <!-- Newsletter Box -->
-    <div class="p-6 bg-slate-50 dark:bg-slate-900 rounded-lg border border-slate-100 dark:border-slate-800" id="sidebar-newsletter">
+    <div class="p-6 bg-slate-50 dark:bg-slate-900 rounded-lg border border-slate-100 dark:border-slate-800"
+        id="sidebar-newsletter">
         <div class="text-primary mb-3">
             <span class="material-symbols-outlined text-[32px]">mail</span>
         </div>
-        <h5 class="text-lg font-bold text-slate-900 dark:text-white mb-2 font-display">The Daily Briefing</h5>
-        <p class="text-sm text-slate-500 mb-4 leading-relaxed font-ui">
-            Essential news, expert analysis, and exclusive content delivered straight to your inbox.
+        <h5 class="text-lg font-bold text-slate-900 dark:text-white mb-2 font-display"
+            x-text="t('Resumo Diário', 'The Daily Briefing')">Resumo Diário</h5>
+        <p class="text-sm text-slate-500 mb-4 leading-relaxed font-ui"
+            x-text="t('Notícias essenciais e análises exclusivas direto em seu e-mail.', 'Essential news, expert analysis, and exclusive content delivered straight to your inbox.')">
+            Notícias essenciais e análises exclusivas direto em seu e-mail.
         </p>
-        <form hx-post="{% url 'news:newsletter_subscribe' %}" hx-target="#sidebar-newsletter" hx-swap="outerHTML" class="flex flex-col gap-3">
+        <form hx-post="{% url 'news:newsletter_subscribe' %}" hx-target="this" hx-swap="outerHTML"
+            class="flex flex-col gap-3">
             {% csrf_token %}
-            <input name="email" type="email" required placeholder="Email address"
-                   class="font-ui w-full px-4 py-2 rounded border border-gray-300 dark:border-gray-700 bg-white dark:bg-black text-sm focus:ring-1 focus:ring-primary focus:border-primary outline-none">
+            <input name="email" type="email" required :placeholder="t('Endereço de e-mail', 'Email address')"
+                placeholder="Email address"
+                class="font-ui w-full px-4 py-2 rounded border border-gray-300 dark:border-gray-700 bg-white dark:bg-black text-sm focus:ring-1 focus:ring-primary focus:border-primary outline-none">
             <button type="submit"
-                    class="font-ui w-full py-2 bg-slate-900 dark:bg-white text-white dark:text-black text-sm font-bold rounded hover:opacity-90 transition-opacity">
-                Sign Up
+                class="font-ui w-full py-2 bg-slate-900 dark:bg-white text-white dark:text-black text-sm font-bold rounded hover:opacity-90 transition-opacity">
+                <span x-text="t('Assinar', 'Sign Up')">Sign Up</span>
             </button>
         </form>
-        <p class="text-xs text-slate-400 mt-3 text-center font-ui">No spam, unsubscribe anytime.</p>
+        <p class="text-xs text-slate-400 mt-3 text-center font-ui"
+            x-text="t('Sem spam, cancele quando quiser.', 'No spam, unsubscribe anytime.')">No spam, unsubscribe
+            anytime.</p>
     </div>
 
     <!-- Categories & Tags (Optional, kept for completeness but styled cleanly) -->
     <div class="pt-8 border-t border-gray-100 dark:border-gray-800">
-        <h4 class="font-ui text-xs font-bold uppercase tracking-widest text-slate-500 mb-4">Explore</h4>
+        <h4 class="font-ui text-xs font-bold uppercase tracking-widest text-slate-500 mb-4"
+            x-text="t('Explorar', 'Explore')">Explore</h4>
         <div class="flex flex-wrap gap-2">
             {% for cat in top_categories|slice:":5" %}
-            <a href="{% url 'news:category_detail' cat.slug %}" class="text-xs font-medium text-slate-600 dark:text-slate-400 hover:text-primary transition-colors bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded">
+            <a href="{% url 'news:category_detail' cat.slug %}"
+                class="text-xs font-medium text-slate-600 dark:text-slate-400 hover:text-primary transition-colors bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded">
                 {{ cat.name }}
             </a>
             {% endfor %}
             {% for tag in top_tags|slice:":5" %}
-            <a href="{% url 'news:tag_detail' tag.slug %}" class="text-xs font-medium text-slate-600 dark:text-slate-400 hover:text-primary transition-colors bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded">
+            <a href="{% url 'news:tag_detail' tag.slug %}"
+                class="text-xs font-medium text-slate-600 dark:text-slate-400 hover:text-primary transition-colors bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded">
                 #{{ tag.name }}
             </a>
             {% endfor %}

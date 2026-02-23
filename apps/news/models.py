@@ -81,7 +81,7 @@ class Article(TimeStampedModel, SEOModel):
 
 
 class NewsletterSubscription(TimeStampedModel):
-    email = models.EmailField(unique=True)
+    email = models.EmailField()
     is_active = models.BooleanField(default=True)
     site = models.ForeignKey(
         Site,
@@ -93,6 +93,50 @@ class NewsletterSubscription(TimeStampedModel):
         ordering = ['-created_at']
         verbose_name = 'Newsletter Subscription'
         verbose_name_plural = 'Newsletter Subscriptions'
+        unique_together = [['email', 'site']]
 
     def __str__(self):
         return self.email
+
+
+class ArticleLike(TimeStampedModel):
+    article = models.ForeignKey(Article, on_delete=models.CASCADE, related_name='likes')
+    ip_address = models.GenericIPAddressField(null=True, blank=True)
+    session_key = models.CharField(max_length=40, null=True, blank=True)
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name='article_likes')
+
+    class Meta:
+        verbose_name = 'Article Like'
+        verbose_name_plural = 'Article Likes'
+        unique_together = [['article', 'ip_address', 'session_key', 'user']]
+
+    def __str__(self):
+        return f'Like on {self.article.title}'
+
+
+class Comment(TimeStampedModel):
+    article = models.ForeignKey(Article, on_delete=models.CASCADE, related_name='comments')
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='comments')
+    content = models.TextField()
+    is_active = models.BooleanField(default=True, help_text="Uncheck to hide this comment (admin moderation).")
+
+    class Meta:
+        ordering = ['-created_at']
+        verbose_name = 'Comment'
+        verbose_name_plural = 'Comments'
+
+    def __str__(self):
+        return f'Comment by {self.user} on {self.article.title}'
+
+
+class ArticleBookmark(TimeStampedModel):
+    article = models.ForeignKey(Article, on_delete=models.CASCADE, related_name='bookmarks')
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='bookmarked_articles')
+
+    class Meta:
+        verbose_name = 'Article Bookmark'
+        verbose_name_plural = 'Article Bookmarks'
+        unique_together = [['article', 'user']]
+
+    def __str__(self):
+        return f'{self.user} bookmarked {self.article.title}'

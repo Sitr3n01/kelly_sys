@@ -1,6 +1,7 @@
 import os
 from pathlib import Path
 import environ
+from django.urls import reverse_lazy
 
 # Build paths
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
@@ -47,6 +48,7 @@ MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
+    'django.middleware.locale.LocaleMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
@@ -101,6 +103,10 @@ AUTH_PASSWORD_VALIDATORS = [
 ]
 
 LANGUAGE_CODE = 'pt-br'
+LANGUAGES = [
+    ('pt-br', 'Português (BR)'),
+    ('en', 'English'),
+]
 TIME_ZONE = 'America/Sao_Paulo'
 USE_I18N = True
 USE_TZ = True
@@ -118,6 +124,146 @@ MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+# ── Django Unfold Admin Configuration ──────────────────────────────────────
+UNFOLD = {
+    'SITE_TITLE': 'Kelly Sys',
+    'SITE_HEADER': 'Painel de Administração',
+    'SITE_URL': '/',
+    'SITE_ICON': None,  # Deixar None ou apontar para um favicon estático
+    'SHOW_HISTORY': True,
+    'SHOW_VIEW_ON_SITE': True,
+    'COLORS': {
+        'primary': {
+            '50': '239 246 255',
+            '100': '219 234 254',
+            '200': '191 219 254',
+            '300': '147 197 253',
+            '400': '96 165 250',
+            '500': '59 130 246',
+            '600': '17 82 212',   # #1152d4 — cor primária do projeto
+            '700': '29 78 216',
+            '800': '30 64 175',
+            '900': '30 58 138',
+            '950': '23 37 84',
+        },
+    },
+    'SIDEBAR': {
+        'show_search': True,
+        'show_all_applications': False,
+        'navigation': [
+            {
+                'title': 'Portal Escolar',
+                'separator': True,
+                'items': [
+                    {
+                        'title': 'Páginas',
+                        'icon': 'article',
+                        'link': reverse_lazy('admin:school_page_changelist'),
+                        'permission': lambda request: request.user.has_perm('school.view_page'),
+                    },
+                    {
+                        'title': 'Equipe',
+                        'icon': 'group',
+                        'link': reverse_lazy('admin:school_teammember_changelist'),
+                        'permission': lambda request: request.user.has_perm('school.view_teammember'),
+                    },
+                    {
+                        'title': 'Depoimentos',
+                        'icon': 'format_quote',
+                        'link': reverse_lazy('admin:school_testimonial_changelist'),
+                        'permission': lambda request: request.user.has_perm('school.view_testimonial'),
+                    },
+                    {
+                        'title': 'Vagas',
+                        'icon': 'work',
+                        'link': reverse_lazy('admin:hiring_jobposting_changelist'),
+                        'permission': lambda request: request.user.has_perm('hiring.view_jobposting'),
+                    },
+                    {
+                        'title': 'Departamentos',
+                        'icon': 'business',
+                        'link': reverse_lazy('admin:hiring_department_changelist'),
+                        'permission': lambda request: request.user.has_perm('hiring.view_department'),
+                    },
+                    {
+                        'title': 'Candidaturas',
+                        'icon': 'description',
+                        'link': reverse_lazy('admin:hiring_application_changelist'),
+                        'permission': lambda request: request.user.has_perm('hiring.view_application'),
+                    },
+                    {
+                        'title': 'Mensagens de Contato',
+                        'icon': 'contact_mail',
+                        'link': reverse_lazy('admin:contact_contactinquiry_changelist'),
+                        'permission': lambda request: request.user.has_perm('contact.view_contactinquiry'),
+                    },
+                ],
+            },
+            {
+                'title': 'Portal de Notícias',
+                'separator': True,
+                'items': [
+                    {
+                        'title': 'Artigos',
+                        'icon': 'newspaper',
+                        'link': reverse_lazy('admin:news_article_changelist'),
+                        'permission': lambda request: request.user.has_perm('news.view_article'),
+                    },
+                    {
+                        'title': 'Categorias',
+                        'icon': 'category',
+                        'link': reverse_lazy('admin:news_category_changelist'),
+                        'permission': lambda request: request.user.has_perm('news.view_category'),
+                    },
+                    {
+                        'title': 'Tags',
+                        'icon': 'label',
+                        'link': reverse_lazy('admin:news_tag_changelist'),
+                        'permission': lambda request: request.user.has_perm('news.view_tag'),
+                    },
+                    {
+                        'title': 'Comentários',
+                        'icon': 'chat',
+                        'link': reverse_lazy('admin:news_comment_changelist'),
+                        'permission': lambda request: request.user.has_perm('news.view_comment'),
+                    },
+                    {
+                        'title': 'Newsletter',
+                        'icon': 'mail',
+                        'link': reverse_lazy('admin:news_newslettersubscription_changelist'),
+                        'permission': lambda request: request.user.has_perm('news.view_newslettersubscription'),
+                    },
+                ],
+            },
+            {
+                'title': 'Sistema',
+                'separator': True,
+                'items': [
+                    {
+                        'title': 'Usuários',
+                        'icon': 'manage_accounts',
+                        'link': reverse_lazy('admin:accounts_customuser_changelist'),
+                        'permission': lambda request: request.user.is_superuser,
+                    },
+                    {
+                        'title': 'Configurações do Site',
+                        'icon': 'settings',
+                        'link': reverse_lazy('admin:common_siteextension_changelist'),
+                        'permission': lambda request: request.user.is_superuser,
+                    },
+                    {
+                        'title': 'Sites',
+                        'icon': 'language',
+                        'link': reverse_lazy('admin:sites_site_changelist'),
+                        'permission': lambda request: request.user.is_superuser,
+                    },
+                ],
+            },
+        ],
+    },
+    'INDEX_DASHBOARD': 'apps.common.dashboard.AdminDashboardView',
+}
 
 # Email
 EMAIL_BACKEND = env('EMAIL_BACKEND', default='django.core.mail.backends.console.EmailBackend')

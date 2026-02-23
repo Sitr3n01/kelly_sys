@@ -14,7 +14,7 @@
                     <div class="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent z-10"></div>
                     {% if featured.featured_image %}
                     <div class="w-full h-full bg-cover bg-center transition-transform duration-700 group-hover:scale-105"
-                         style="background-image: url('{{ featured.featured_image.url }}');">
+                        style="background-image: url('{{ featured.featured_image.url }}');">
                     </div>
                     {% else %}
                     <div class="w-full h-full bg-slate-200 dark:bg-slate-800 flex items-center justify-center">
@@ -25,26 +25,35 @@
                 <div class="flex flex-col gap-3 mt-4">
                     <div class="flex items-center gap-3 mb-1">
                         {% if featured.category %}
-                        <span class="font-ui text-xs font-bold text-primary tracking-widest uppercase">{{ featured.category.name }}</span>
+                        <span class="font-ui text-xs font-bold text-primary tracking-widest uppercase">{{
+                            featured.category.name }}</span>
                         {% endif %}
-                        <span class="font-ui text-xs text-slate-500 dark:text-slate-400">{{ featured.reading_time }} min read</span>
+                        <span class="font-ui text-xs text-slate-500 dark:text-slate-400">{{ featured.reading_time }}
+                            <span x-text="t('min de leitura', 'min read')">min
+                                read</span></span>
                     </div>
-                    <h2 class="text-4xl md:text-5xl font-bold leading-[1.1] text-slate-900 dark:text-white group-hover:text-primary transition-colors">
+                    <h2
+                        class="text-4xl md:text-5xl font-bold leading-[1.1] text-slate-900 dark:text-white group-hover:text-primary transition-colors">
                         {{ featured.title }}
                     </h2>
                     <p class="text-xl leading-relaxed text-slate-600 dark:text-slate-300 max-w-2xl font-normal mt-2">
                         {{ featured.excerpt|default:featured.content|striptags|truncatewords:30 }}
                     </p>
                     {% if featured.author %}
-                    <div class="flex items-center gap-3 mt-4 pt-4 border-t border-gray-100 dark:border-gray-800 w-full md:w-auto">
+                    <div
+                        class="flex items-center gap-3 mt-4 pt-4 border-t border-gray-100 dark:border-gray-800 w-full md:w-auto">
                         {% if featured.author.avatar %}
-                        <div class="w-8 h-8 rounded-full bg-gray-200 bg-cover bg-center" style="background-image: url('{{ featured.author.avatar.url }}');"></div>
+                        <div class="w-8 h-8 rounded-full bg-gray-200 bg-cover bg-center"
+                            style="background-image: url('{{ featured.author.avatar.url }}');"></div>
                         {% else %}
-                        <div class="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-primary text-xs font-bold">
+                        <div
+                            class="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-primary text-xs font-bold">
                             {{ featured.author.get_full_name|default:featured.author.username|first|upper }}
                         </div>
                         {% endif %}
-                        <span class="font-ui text-sm font-medium text-slate-900 dark:text-white">By {{ featured.author.get_full_name|default:featured.author.username }}</span>
+                        <span class="font-ui text-sm font-medium text-slate-900 dark:text-white"><span
+                                x-text="t('Por', 'By')">By</span> {{
+                            featured.author.get_full_name|default:featured.author.username }}</span>
                     </div>
                     {% endif %}
                 </div>
@@ -53,14 +62,16 @@
         {% endif %}
 
         <!-- Secondary Grid (First 2 items from page_obj) -->
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-12 border-t border-gray-100 dark:border-gray-800 pt-12">
+        {% if page_obj.paginator.count > 0 %}
+        <div
+            class="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-12 border-t border-gray-100 dark:border-gray-800 pt-12">
             {% for article in page_obj|slice:":2" %}
             <article class="flex flex-col gap-4 group cursor-pointer">
                 <a href="{% url 'news:article_detail' article.slug %}" class="block">
                     <div class="w-full aspect-[3/2] overflow-hidden rounded-lg bg-gray-100 dark:bg-gray-800 mb-2">
                         {% if article.featured_image %}
                         <div class="w-full h-full bg-cover bg-center transition-transform duration-500 group-hover:scale-105"
-                             style="background-image: url('{{ article.featured_image.url }}');">
+                            style="background-image: url('{{ article.featured_image.url }}');">
                         </div>
                         {% else %}
                         <div class="w-full h-full bg-slate-200 dark:bg-slate-800 flex items-center justify-center">
@@ -69,9 +80,11 @@
                         {% endif %}
                     </div>
                     {% if article.category %}
-                    <span class="font-ui text-xs font-bold text-primary tracking-widest uppercase">{{ article.category.name }}</span>
+                    <span class="font-ui text-xs font-bold text-primary tracking-widest uppercase">{{
+                        article.category.name }}</span>
                     {% endif %}
-                    <h3 class="text-2xl font-bold leading-tight text-slate-900 dark:text-white group-hover:text-primary transition-colors">
+                    <h3
+                        class="text-2xl font-bold leading-tight text-slate-900 dark:text-white group-hover:text-primary transition-colors">
                         {{ article.title }}
                     </h3>
                     <p class="text-base text-slate-600 dark:text-slate-400 leading-relaxed line-clamp-3">
@@ -82,24 +95,18 @@
             {% endfor %}
         </div>
 
-        <!-- Pull Quote Section (Static for visual flair, or dynamic if we had a quote model) -->
-        <div class="py-12 my-4 relative hidden md:block">
-            <span class="absolute top-8 left-0 text-6xl text-primary/20 font-serif leading-none">“</span>
-            <blockquote class="text-3xl md:text-4xl italic text-center font-serif text-slate-800 dark:text-slate-200 leading-tight px-8 max-w-3xl mx-auto">
-                The most powerful tool we have for changing the world is our ability to change our minds about the nature of reality.
-            </blockquote>
-            <div class="text-center mt-6 font-ui text-sm text-slate-500 uppercase tracking-widest">— From "The Cognitive Shift"</div>
-        </div>
-
         <!-- Opinion / List Section (Remaining items) -->
         <div class="border-t border-gray-100 dark:border-gray-800 pt-12">
-            <h4 class="font-ui text-sm font-bold uppercase tracking-widest text-slate-500 mb-8">Opinion &amp; Essays</h4>
+            <h4 class="font-ui text-sm font-bold uppercase tracking-widest text-slate-500 mb-8"
+                x-text="t('Opiniões e Ensaios', 'Opinion &amp; Essays')">Opinion &amp; Essays
+            </h4>
             <div class="flex flex-col gap-8">
                 {% for article in page_obj|slice:"2:" %}
                 <article class="flex flex-col md:flex-row gap-6 items-start group cursor-pointer">
                     <div class="flex-1">
                         <a href="{% url 'news:article_detail' article.slug %}">
-                            <h3 class="text-xl font-bold text-slate-900 dark:text-white mb-2 group-hover:text-primary transition-colors">
+                            <h3
+                                class="text-xl font-bold text-slate-900 dark:text-white mb-2 group-hover:text-primary transition-colors">
                                 {{ article.title }}
                             </h3>
                             <p class="text-slate-600 dark:text-slate-400 leading-relaxed line-clamp-2">
@@ -107,33 +114,49 @@
                             </p>
                             <div class="mt-3 flex items-center gap-2">
                                 {% if article.author %}
-                                <span class="font-ui text-xs font-medium text-slate-500">By {{ article.author.get_full_name|default:article.author.username }}</span>
+                                <span class="font-ui text-xs font-medium text-slate-500"><span
+                                        x-text="t('Por', 'By')">By</span> {{
+                                    article.author.get_full_name|default:article.author.username }}</span>
                                 <span class="text-slate-300">•</span>
                                 {% endif %}
-                                <span class="font-ui text-xs text-slate-400">{{ article.reading_time }} min read</span>
+                                <span class="font-ui text-xs text-slate-400">{{ article.reading_time }} <span
+                                        x-text="t('min de leitura', 'min read')">min read</span></span>
                             </div>
                         </a>
                     </div>
                     {% if article.featured_image %}
-                    <a href="{% url 'news:article_detail' article.slug %}" class="w-full md:w-48 aspect-video rounded bg-gray-100 dark:bg-gray-800 overflow-hidden block">
+                    <a href="{% url 'news:article_detail' article.slug %}"
+                        class="w-full md:w-48 aspect-video rounded bg-gray-100 dark:bg-gray-800 overflow-hidden block">
                         <div class="w-full h-full bg-cover bg-center grayscale opacity-80 group-hover:grayscale-0 group-hover:opacity-100 transition-all"
-                             style="background-image: url('{{ article.featured_image.url }}');">
+                            style="background-image: url('{{ article.featured_image.url }}');">
                         </div>
                     </a>
                     {% endif %}
                 </article>
                 {% empty %}
-                {% if page_obj.paginator.count <= 2 %}
-                <!-- No more articles to show in list view -->
-                {% else %}
-                <p class="text-slate-500">No more articles.</p>
-                {% endif %}
-                {% endfor %}
+                {% if page_obj.paginator.count <= 2 %} <!-- No more articles to show in list view -->
+                    {% else %}
+                    <p class="text-slate-500" x-text="t('Sem mais artigos.', 'No more articles.')">No more articles.</p>
+                    {% endif %}
+                    {% endfor %}
             </div>
 
             <!-- Pagination -->
             {% include 'news/partials/pagination.html' %}
         </div>
+        {% else %}
+        <div
+            class="border-t border-gray-100 dark:border-gray-800 pt-16 pb-12 flex flex-col items-center justify-center text-center">
+            <span class="material-symbols-outlined text-6xl text-slate-200 dark:text-slate-700 mb-4">article</span>
+            <h3 class="text-2xl font-bold font-display text-slate-700 dark:text-slate-300 mb-2"
+                x-text="t('Sem notícias publicadas', 'No published news')">Sem notícias publicadas
+            </h3>
+            <p class="text-slate-500 dark:text-slate-500 font-ui text-sm max-w-sm"
+                x-text="t('Ainda não há artigos disponíveis nesta seção. Volte em breve para conferir novas atualizações.', 'There are no articles available in this section yet. Check back soon for new updates.')">
+                Ainda não há artigos disponíveis nesta seção. Volte em breve para conferir novas atualizações.
+            </p>
+        </div>
+        {% endif %}
     </div>
 
     <!-- Right Column: Sidebar / Latest Updates (4 cols) -->

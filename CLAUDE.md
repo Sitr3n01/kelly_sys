@@ -131,13 +131,17 @@
 | 2026-02-23 | Sidebar via utility function | Evita queries desnecessárias em páginas que não precisam |
 | 2026-02-23 | Funcionalidade antes do design | Toda lógica implementada primeiro, design Stitch depois |
 | 2026-02-23 | Context processor para nav | Categorias injetadas só em páginas `/news/` |
+| 2026-02-23 | unique_together para NewsletterSubscription | `unique_together = [['email', 'site']]` — mesmo email pode assinar sites diferentes |
+| 2026-02-23 | Admin agrupado por portal | Sidebar Unfold com grupos School Portal / News Portal / Sistema |
+| 2026-02-23 | Dashboard customizado Unfold | Custom view com stats reais, sem biblioteca externa |
+| 2026-02-23 | i18n no admin via LocaleMiddleware | PT-BR padrão, EN disponível via seletor na sidebar |
 
 ---
 
 ## Estado Atual
 
-- **Fase:** 5 — Portal de Notícias (Funcionalidades Completas)
-- **Tarefa atual:** Fases 5A-5J no GEMINI.md (todas de uma vez)
-- **Próximo:** Gemini executa, Claude revisa
-- **Bloqueios:** Template Google Stitch pendente para Fase 6 (design visual)
+- **Fase:** 6 — Admin Enhancement (Painel Unificado Bilíngue)
+- **Tarefa atual:** Fases 6A-6E no GEMINI.md
+- **Próximo:** Gemini executa 6A-6E; Claude revisa; Google Stitch para Fase 7
+- **Bloqueios:** Nenhum
 - **Última atualização:** 2026-02-23

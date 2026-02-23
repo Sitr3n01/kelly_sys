@@ -1,5 +1,10 @@
-<!DOCTYPE html>
-<html lang="{{ LANGUAGE_CODE }}" class="antialiased">
+<html x-data="{ 
+    theme: localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'),
+    lang: localStorage.getItem('lang') || 'pt'
+}" x-init="
+    $watch('theme', val => localStorage.setItem('theme', val));
+    $watch('lang', val => localStorage.setItem('lang', val));
+" :class="theme === 'dark' ? 'dark' : ''" :lang="lang" class="scroll-smooth">
 
 <head>
     <meta charset="UTF-8">
@@ -39,9 +44,12 @@
     <!-- Fonts for News (Chronicle Design) -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,200..800;1,6..72,200..800&display=swap" rel="stylesheet"/>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet"/>
-    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,200..800;1,6..72,200..800&display=swap"
+        rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap"
+        rel="stylesheet" />
 
     <!-- Tailwind CSS via CDN -->
     <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
@@ -77,6 +85,7 @@
         body {
             font-family: 'Newsreader', serif;
         }
+
         .font-ui {
             font-family: 'Inter', sans-serif;
         }
@@ -85,9 +94,11 @@
         ::-webkit-scrollbar {
             width: 6px;
         }
+
         ::-webkit-scrollbar-track {
             background: transparent;
         }
+
         ::-webkit-scrollbar-thumb {
             background-color: #e5e7eb;
             border-radius: 20px;
@@ -127,29 +138,44 @@
     {% block extra_css %}{% endblock %}
 </head>
 
-<body class="bg-background-light dark:bg-background-dark text-slate-900 dark:text-slate-100 min-h-screen flex flex-col antialiased"
+<body
+    class="bg-background-light dark:bg-background-dark text-slate-900 dark:text-slate-100 min-h-screen flex flex-col antialiased"
     hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'>
 
-    {% include 'components/navbar_news.html' %}
+    <!-- System-wide translation dictionary via Alpine (optional, for simple translations) -->
+    <script>
+        document.addEventListener('alpine:init', () => {
+            Alpine.data('i18n', () => ({
+                t(pt, en) {
+                    return this.lang === 'en' ? en : pt;
+                }
+            }));
+        });
+    </script>
 
-    <!-- Flash Messages -->
-    {% if messages %}
-    <div class="fixed top-24 right-4 z-50 flex flex-col gap-2 pointer-events-none">
-        {% for message in messages %}
-        <div x-data="{ show: true }" x-show="show" x-transition.opacity.duration.300ms
-            x-init="setTimeout(() => show = false, 5000)"
-            class="pointer-events-auto p-4 shadow-lg rounded-lg border-l-4 {% if message.tags == 'error' %}border-red-500 bg-white text-red-900{% else %}border-primary bg-white text-slate-900{% endif %} flex justify-between items-center min-w-[300px]">
-            <span class="font-ui text-sm font-medium">{{ message }}</span>
-            <button @click="show = false" class="ml-4 opacity-70 hover:opacity-100">&times;</button>
+    <div x-data="i18n" class="flex flex-col min-h-screen">
+
+        {% include 'components/navbar_news.html' %}
+
+        <!-- Flash Messages -->
+        {% if messages %}
+        <div class="fixed top-24 right-4 z-50 flex flex-col gap-2 pointer-events-none">
+            {% for message in messages %}
+            <div x-data="{ show: true }" x-show="show" x-transition.opacity.duration.300ms
+                x-init="setTimeout(() => show = false, 5000)"
+                class="pointer-events-auto p-4 shadow-lg rounded-lg border-l-4 {% if message.tags == 'error' %}border-red-500 bg-white text-red-900{% else %}border-primary bg-white text-slate-900{% endif %} flex justify-between items-center min-w-[300px]">
+                <span class="font-ui text-sm font-medium">{{ message }}</span>
+                <button @click="show = false" class="ml-4 opacity-70 hover:opacity-100">&times;</button>
+            </div>
+            {% endfor %}
         </div>
-        {% endfor %}
+        {% endif %}
+
+        {% block content %}
+        {% endblock %}
+
+        {% include 'components/footer_news.html' %}
     </div>
-    {% endif %}
-
-    {% block content %}
-    {% endblock %}
-
-    {% include 'components/footer_news.html' %}
 
     {% block extra_js %}{% endblock %}
 </body>

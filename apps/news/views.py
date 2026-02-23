@@ -1,13 +1,15 @@
 from django.contrib import messages
 from django.contrib.auth import get_user_model
+from django.contrib.auth.decorators import login_required
 from django.contrib.sites.shortcuts import get_current_site
 from django.core.paginator import Paginator
 from django.db.models import F, Q
+from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.http import require_POST
 
 from .forms import NewsletterSubscriptionForm
-from .models import Article, Category, NewsletterSubscription, Tag
+from .models import Article, ArticleBookmark, ArticleLike, Category, Comment, NewsletterSubscription, Tag
 from .utils import get_sidebar_context
 
 User = get_user_model()
@@ -40,7 +42,7 @@ def article_list(request):
 
 
 def article_detail(request, slug):
-    """Detalhe do artigo com artigos relacionados."""
+    """Detalhe do artigo com artigos relacionados, comentarios e likes."""
     article = get_object_or_404(
         Article.on_site.select_related('category', 'author').prefetch_related('tags'),
         slug=slug,
@@ -58,13 +60,25 @@ def article_detail(request, slug):
             Article.on_site
             .filter(status=Article.Status.PUBLISHED, category=article.category)
             .exclude(pk=article.pk)
-            .select_related('category')
+            .select_related('category', 'author')
             .order_by('-published_at')[:3]
         )
+
+    is_bookmarked = False
+    if request.user.is_authenticated:
+        is_bookmarked = ArticleBookmark.objects.filter(user=request.user, article=article).exists()
+
+    comments = article.comments.filter(is_active=True).select_related('user').order_by('created_at')
+    comment_count = comments.count()
+    like_count = article.likes.count()
 
     return render(request, 'news/article_detail.html', {
         'article': article,
         'related_articles': related_articles,
+        'is_bookmarked': is_bookmarked,
+        'comments': comments,
+        'comment_count': comment_count,
+        'like_count': like_count,
         **get_sidebar_context(),
     })
 
@@ -221,4 +235,118 @@ def newsletter_subscribe(request):
     if request.htmx:
         return render(request, 'news/partials/newsletter_error.html', {'form': form})
     messages.error(request, "E-mail inválido. Tente novamente.")
+    return redirect(request.META.get('HTTP_REFERER', 'news:list'))
+
+
+@login_required
+def user_dashboard(request):
+    """Dashboard do usuario com artigos salvos, curtidos e comentarios."""
+    user = request.user
+
+    saved_articles = (
+        Article.objects
+        .filter(bookmarks__user=user)
+        .select_related('category', 'author')
+        .order_by('-bookmarks__created_at')
+    )
+    liked_articles = (
+        Article.objects
+        .filter(likes__user=user)
+        .select_related('category', 'author')
+        .order_by('-likes__created_at')
+    )
+    user_comments = user.comments.select_related('article').order_by('-created_at')
+
+    return render(request, 'news/account/dashboard.html', {
+        'saved_articles': saved_articles,
+        'liked_articles': liked_articles,
+        'user_comments': user_comments,
+        **get_sidebar_context(),
+    })
+
+
+@require_POST
+@login_required
+def toggle_bookmark(request, article_id):
+    """Toggle de bookmark de artigo para o usuario autenticado."""
+    article = get_object_or_404(Article, id=article_id)
+    bookmark, created = ArticleBookmark.objects.get_or_create(user=request.user, article=article)
+
+    if not created:
+        bookmark.delete()
+        is_bookmarked = False
+    else:
+        is_bookmarked = True
+
+    if request.htmx:
+        # Se chamado do dashboard, remover o elemento da lista
+        if request.GET.get('source') == 'dashboard':
+            return HttpResponse('')
+        # Se chamado do article_detail, retornar o botão atualizado
+        return render(request, 'news/partials/bookmark_button.html', {
+            'article': article,
+            'is_bookmarked': is_bookmarked,
+        })
+    return redirect(request.META.get('HTTP_REFERER', 'news:list'))
+
+
+@require_POST
+@login_required
+def toggle_like(request, article_id):
+    """Toggle de like em artigo (por usuario autenticado)."""
+    article = get_object_or_404(Article, id=article_id)
+    like, created = ArticleLike.objects.get_or_create(
+        article=article,
+        user=request.user,
+        defaults={'ip_address': request.META.get('REMOTE_ADDR')},
+    )
+    if not created:
+        like.delete()
+
+    like_count = article.likes.count()
+
+    if request.htmx:
+        is_liked = created
+        return render(request, 'news/partials/like_button.html', {
+            'article': article,
+            'like_count': like_count,
+            'is_liked': is_liked,
+        })
+    return redirect(request.META.get('HTTP_REFERER', 'news:list'))
+
+
+@require_POST
+@login_required
+def add_comment(request, article_id):
+    """Adiciona comentario em um artigo (usuario autenticado)."""
+    article = get_object_or_404(Article, id=article_id, status=Article.Status.PUBLISHED)
+    content = request.POST.get('content', '').strip()
+
+    if not content:
+        if request.htmx:
+            return HttpResponse('<p class="text-red-500 text-sm font-ui">O comentário não pode estar vazio.</p>')
+        messages.error(request, 'O comentário não pode estar vazio.')
+        return redirect(article.get_absolute_url())
+
+    Comment.objects.create(article=article, user=request.user, content=content)
+
+    if request.htmx:
+        comments = article.comments.filter(is_active=True).select_related('user').order_by('created_at')
+        return render(request, 'news/partials/comments_list.html', {
+            'comments': comments,
+            'article': article,
+        })
+    messages.success(request, 'Comentário publicado com sucesso!')
+    return redirect(article.get_absolute_url())
+
+
+@require_POST
+@login_required
+def delete_comment(request, comment_id):
+    """Permite que o usuario delete seu proprio comentario."""
+    comment = get_object_or_404(Comment, id=comment_id, user=request.user)
+    comment.delete()
+
+    if request.htmx:
+        return HttpResponse('')
     return redirect(request.META.get('HTTP_REFERER', 'news:list'))

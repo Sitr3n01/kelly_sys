@@ -1,0 +1,55 @@
+{% extends 'base_news.html' %}
+
+{% block title %}Criar Conta - The Chronicle{% endblock %}
+
+{% block content %}
+<div class="max-w-[480px] mx-auto px-6 xl:px-0 py-24 font-display">
+    <div class="p-8 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-3xl shadow-sm">
+        <h1 class="text-3xl font-bold tracking-tight text-slate-900 dark:text-white mb-2 text-center"
+            x-text="t('Criar Conta', 'Sign Up')">Criar Conta</h1>
+        <p class="text-center text-slate-500 font-ui text-sm mb-8"
+            x-text="t('Participe da conversa.', 'Join the conversation.')">Participe da nossa comunidade.</p>
+
+        <form method="post" action="{% url 'accounts:register' %}" class="space-y-5">
+            {% csrf_token %}
+            {% if form.non_field_errors %}
+            <div
+                class="p-4 rounded-lg bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 font-ui text-sm mb-4">
+                {{ form.non_field_errors }}
+            </div>
+            {% endif %}
+
+            {% for field in form %}
+            <div>
+                <label for="{{ field.id_for_label }}"
+                    class="block text-sm font-bold text-slate-700 dark:text-slate-300 font-ui mb-2">{{ field.label
+                    }}</label>
+                <input type="{{ field.field.widget.input_type }}" name="{{ field.name }}" id="{{ field.id_for_label }}"
+                    {% if field.field.required %}required{% endif %}
+                    class="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-transparent px-4 py-3 text-slate-900 dark:text-white focus:border-primary focus:ring-1 focus:ring-primary font-ui transition-all"
+                    placeholder="{{ field.label }}">
+                {% if field.errors %}
+                <p class="mt-1 text-sm text-red-500 font-ui">{{ field.errors.0 }}</p>
+                {% endif %}
+                {% if field.help_text %}
+                <p class="mt-1 text-xs text-slate-500 font-ui">{{ field.help_text|safe }}</p>
+                {% endif %}
+            </div>
+            {% endfor %}
+
+            <button type="submit"
+                class="w-full mt-4 py-3.5 px-4 bg-primary text-white font-bold rounded-xl font-ui shadow-sm hover:bg-primary/90 hover:shadow-primary/30 transition-all flex justify-center items-center">
+                <span x-text="t('Registrar', 'Sign Up')">Registrar</span>
+            </button>
+        </form>
+
+        <div class="mt-8 pt-6 border-t border-slate-100 dark:border-slate-800 text-center">
+            <p class="text-sm font-ui text-slate-500">
+                <span x-text="t('Já tem uma conta?', 'Already have an account?')">Já tem uma conta?</span>
+                <a href="{% url 'accounts:login' %}" class="font-bold text-primary hover:underline ml-1"
+                    x-text="t('Acessar agora', 'Log in now')">Entrar aqui</a>
+            </p>
+        </div>
+    </div>
+</div>
+{% endblock %}

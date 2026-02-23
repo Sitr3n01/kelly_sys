@@ -2,7 +2,7 @@ from django.contrib import admin
 from django.utils import timezone
 from unfold.admin import ModelAdmin
 
-from .models import Article, Category, NewsletterSubscription, Tag
+from .models import Article, ArticleBookmark, ArticleLike, Category, Comment, NewsletterSubscription, Tag
 
 
 @admin.register(Category)
@@ -94,3 +94,38 @@ class NewsletterSubscriptionAdmin(ModelAdmin):
         for sub in queryset:
             writer.writerow([sub.email, sub.site.name, sub.created_at])
         return response
+
+
+@admin.register(Comment)
+class CommentAdmin(ModelAdmin):
+    list_display = ['user', 'article', 'is_active', 'created_at']
+    list_filter = ['is_active', 'created_at']
+    search_fields = ['content', 'user__username', 'article__title']
+    readonly_fields = ['user', 'article', 'created_at']
+    actions = ['approve_comments', 'hide_comments']
+
+    @admin.action(description='Approve selected comments')
+    def approve_comments(self, request, queryset):
+        updated = queryset.update(is_active=True)
+        self.message_user(request, f'{updated} comment(s) approved.')
+
+    @admin.action(description='Hide selected comments')
+    def hide_comments(self, request, queryset):
+        updated = queryset.update(is_active=False)
+        self.message_user(request, f'{updated} comment(s) hidden.')
+
+
+@admin.register(ArticleLike)
+class ArticleLikeAdmin(ModelAdmin):
+    list_display = ['article', 'user', 'ip_address', 'created_at']
+    list_filter = ['created_at']
+    search_fields = ['article__title', 'user__username', 'ip_address']
+    readonly_fields = ['article', 'user', 'ip_address', 'session_key', 'created_at']
+
+
+@admin.register(ArticleBookmark)
+class ArticleBookmarkAdmin(ModelAdmin):
+    list_display = ['user', 'article', 'created_at']
+    list_filter = ['created_at']
+    search_fields = ['user__username', 'article__title']
+    readonly_fields = ['user', 'article', 'created_at']

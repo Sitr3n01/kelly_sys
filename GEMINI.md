@@ -99,19 +99,759 @@ O sistema "Kelly Sys" compartilha o mesmo banco de dados (e o mesmo Django Admin
 
 ## Tarefa Atual
 
-### 🎯 FASE 5: Portal de Notícias — Funcionalidades Completas
+### 🎯 FASE 6: Admin Enhancement — Painel Unificado Bilíngue
 
-**Objetivo:** Transformar o portal de notícias de um MVP básico em um portal completo e profissional com todas as funcionalidades esperadas de um site de notícias.
+**Objetivo:** Transformar o painel Django admin de uma interface técnica genérica em um painel profissional, simples e bilíngue (PT/EN), agrupado por portal, com dashboard de estatísticas e acessível para usuários sem conhecimento técnico.
 
-**Execute TODAS as sub-fases abaixo (A até J) em sequência. Valide cada fase antes de avançar.**
+**Execute TODAS as sub-fases abaixo (A até E) em sequência. Ao final, execute `manage.py check` e confirme zero erros.**
 
 ---
 
-#### FASE 5A — Correções Backend e Utilidades
+#### FASE 6A — Migrar Todos os admin.py para Unfold
 
-**Arquivos a modificar:** `apps/news/models.py`, `apps/news/views.py`
-**Arquivo a criar:** `apps/news/utils.py`
-**Migration:** NÃO
+**Arquivos a modificar:**
+- `apps/school/admin.py`
+- `apps/hiring/admin.py`
+- `apps/contact/admin.py`
+- `apps/accounts/admin.py`
+- `apps/common/admin.py`
+
+**Regra:** Em cada arquivo, substituir `from django.contrib import admin` e herança de `admin.ModelAdmin` por `unfold.admin.ModelAdmin`. Manter toda lógica existente intacta.
+
+##### 6A.1 — apps/school/admin.py
+
+```python
+from django.contrib import admin
+from unfold.admin import ModelAdmin
+
+from .models import Page, TeamMember, Testimonial
+
+
+@admin.register(Page)
+class PageAdmin(ModelAdmin):
+    list_display = ['title', 'site', 'is_published', 'order', 'updated_at']
+    list_filter = ['is_published', 'site']
+    search_fields = ['title', 'content']
+    prepopulated_fields = {'slug': ('title',)}
+    readonly_fields = ['created_at', 'updated_at']
+    fieldsets = [
+        ('Content', {
+            'fields': ('title', 'slug', 'content', 'featured_image'),
+        }),
+        ('Publication', {
+            'fields': ('site', 'is_published', 'order'),
+        }),
+        ('SEO', {
+            'fields': ('meta_title', 'meta_description', 'meta_keywords'),
+            'classes': ('collapse',),
+        }),
+        ('Timestamps', {
+            'fields': ('created_at', 'updated_at'),
+            'classes': ('collapse',),
+        }),
+    ]
+
+
+@admin.register(TeamMember)
+class TeamMemberAdmin(ModelAdmin):
+    list_display = ['name', 'title', 'is_active', 'order']
+    list_filter = ['is_active']
+    search_fields = ['name', 'title', 'bio']
+    ordering = ['order', 'name']
+    fieldsets = [
+        (None, {'fields': ('name', 'title', 'photo', 'bio', 'email')}),
+        ('Display', {'fields': ('is_active', 'order')}),
+    ]
+
+
+@admin.register(Testimonial)
+class TestimonialAdmin(ModelAdmin):
+    list_display = ['name', 'relationship', 'is_featured']
+    list_filter = ['is_featured']
+    search_fields = ['name', 'quote']
+    actions = ['feature_selected', 'unfeature_selected']
+
+    @admin.action(description='Feature selected testimonials')
+    def feature_selected(self, request, queryset):
+        updated = queryset.update(is_featured=True)
+        self.message_user(request, f'{updated} testimonial(s) featured.')
+
+    @admin.action(description='Unfeature selected testimonials')
+    def unfeature_selected(self, request, queryset):
+        updated = queryset.update(is_featured=False)
+        self.message_user(request, f'{updated} testimonial(s) unfeatured.')
+```
+
+##### 6A.2 — apps/hiring/admin.py
+
+```python
+from django.contrib import admin
+from unfold.admin import ModelAdmin
+
+from .models import Application, Department, JobPosting
+
+
+@admin.register(Department)
+class DepartmentAdmin(ModelAdmin):
+    list_display = ['name', 'slug']
+    search_fields = ['name']
+    prepopulated_fields = {'slug': ('name',)}
+
+
+@admin.register(JobPosting)
+class JobPostingAdmin(ModelAdmin):
+    list_display = ['title', 'department', 'employment_type', 'status', 'published_at', 'deadline']
+    list_filter = ['status', 'employment_type', 'department']
+    search_fields = ['title', 'description', 'requirements']
+    prepopulated_fields = {'slug': ('title',)}
+    readonly_fields = ['created_at', 'updated_at']
+    date_hierarchy = 'published_at'
+    fieldsets = [
+        ('Job Details', {
+            'fields': ('title', 'slug', 'department', 'employment_type', 'location', 'salary_range'),
+        }),
+        ('Description', {
+            'fields': ('description', 'requirements'),
+        }),
+        ('Publication', {
+            'fields': ('status', 'published_at', 'deadline'),
+        }),
+        ('SEO', {
+            'fields': ('meta_title', 'meta_description', 'meta_keywords'),
+            'classes': ('collapse',),
+        }),
+        ('Timestamps', {
+            'fields': ('created_at', 'updated_at'),
+            'classes': ('collapse',),
+        }),
+    ]
+    actions = ['open_postings', 'close_postings']
+
+    @admin.action(description='Open selected job postings')
+    def open_postings(self, request, queryset):
+        from django.utils import timezone
+        updated = queryset.update(status='open', published_at=timezone.now())
+        self.message_user(request, f'{updated} posting(s) opened.')
+
+    @admin.action(description='Close selected job postings')
+    def close_postings(self, request, queryset):
+        updated = queryset.update(status='closed')
+        self.message_user(request, f'{updated} posting(s) closed.')
+
+
+@admin.register(Application)
+class ApplicationAdmin(ModelAdmin):
+    list_display = ['first_name', 'last_name', 'job', 'status', 'created_at']
+    list_filter = ['status', 'job', 'created_at']
+    search_fields = ['first_name', 'last_name', 'email']
+    readonly_fields = ['first_name', 'last_name', 'email', 'phone', 'cover_letter', 'resume', 'created_at', 'updated_at']
+    fieldsets = [
+        ('Applicant', {
+            'fields': ('first_name', 'last_name', 'email', 'phone'),
+        }),
+        ('Application', {
+            'fields': ('job', 'cover_letter', 'resume'),
+        }),
+        ('Review', {
+            'fields': ('status', 'notes'),
+        }),
+        ('Timestamps', {
+            'fields': ('created_at', 'updated_at'),
+            'classes': ('collapse',),
+        }),
+    ]
+    actions = ['mark_reviewing', 'mark_approved', 'mark_rejected']
+
+    @admin.action(description='Mark as Under Review')
+    def mark_reviewing(self, request, queryset):
+        updated = queryset.update(status='reviewing')
+        self.message_user(request, f'{updated} application(s) marked as reviewing.')
+
+    @admin.action(description='Mark as Approved')
+    def mark_approved(self, request, queryset):
+        updated = queryset.update(status='approved')
+        self.message_user(request, f'{updated} application(s) approved.')
+
+    @admin.action(description='Mark as Rejected')
+    def mark_rejected(self, request, queryset):
+        updated = queryset.update(status='rejected')
+        self.message_user(request, f'{updated} application(s) rejected.')
+```
+
+##### 6A.3 — apps/contact/admin.py
+
+Verificar como o model ContactInquiry está definido e adaptar:
+
+```python
+from django.contrib import admin
+from unfold.admin import ModelAdmin
+
+from .models import ContactInquiry
+
+
+@admin.register(ContactInquiry)
+class ContactInquiryAdmin(ModelAdmin):
+    list_display = ['name', 'email', 'subject', 'status', 'created_at']
+    list_filter = ['status', 'created_at']
+    search_fields = ['name', 'email', 'subject', 'message']
+    readonly_fields = ['name', 'email', 'subject', 'message', 'created_at']
+    fieldsets = [
+        ('Contact Details', {
+            'fields': ('name', 'email', 'subject', 'message', 'created_at'),
+        }),
+        ('Status', {
+            'fields': ('status',),
+        }),
+    ]
+    actions = ['mark_resolved']
+
+    @admin.action(description='Mark selected inquiries as resolved')
+    def mark_resolved(self, request, queryset):
+        # Verificar o valor correto do status 'resolved' no model
+        updated = queryset.update(status='resolved')
+        self.message_user(request, f'{updated} inquiry(ies) marked as resolved.')
+```
+
+**IMPORTANTE:** Verificar os valores de `status` choices no model `ContactInquiry` antes de usar `'resolved'` — adaptar conforme necessário.
+
+##### 6A.4 — apps/accounts/admin.py
+
+**Caso especial:** deve herdar de `ModelAdmin` (Unfold) E `UserAdmin` (Django). Ordem: `ModelAdmin` primeiro.
+
+```python
+from django.contrib import admin
+from django.contrib.auth.admin import UserAdmin
+from unfold.admin import ModelAdmin
+
+from .models import CustomUser
+
+
+@admin.register(CustomUser)
+class CustomUserAdmin(ModelAdmin, UserAdmin):
+    list_display = ['username', 'email', 'get_role_display', 'is_active', 'is_staff', 'date_joined']
+    list_filter = ['role', 'is_active', 'is_staff', 'date_joined']
+    search_fields = ['username', 'email', 'first_name', 'last_name']
+    ordering = ['-date_joined']
+    fieldsets = UserAdmin.fieldsets + (
+        ('Profile', {
+            'fields': ('role', 'avatar', 'bio'),
+        }),
+    )
+    add_fieldsets = UserAdmin.add_fieldsets + (
+        ('Profile', {
+            'fields': ('role',),
+        }),
+    )
+```
+
+##### 6A.5 — apps/common/admin.py
+
+```python
+from django.contrib import admin
+from unfold.admin import ModelAdmin
+
+from .models import SiteExtension
+
+
+@admin.register(SiteExtension)
+class SiteExtensionAdmin(ModelAdmin):
+    list_display = ['site', 'primary_email', 'phone_number']
+    search_fields = ['site__name', 'primary_email']
+    fieldsets = [
+        ('Site', {
+            'fields': ('site',),
+        }),
+        ('Branding', {
+            'fields': ('tagline', 'logo', 'favicon'),
+        }),
+        ('Contact', {
+            'fields': ('primary_email', 'phone_number', 'address'),
+        }),
+        ('Analytics & Social', {
+            'fields': ('google_analytics_id', 'facebook_url', 'instagram_url', 'youtube_url'),
+            'classes': ('collapse',),
+        }),
+    ]
+```
+
+---
+
+#### FASE 6B — Configurar UNFOLD Settings
+
+**Arquivo a modificar:** `config/settings/base.py`
+
+Adicionar APÓS os imports (no topo) e ANTES de `INSTALLED_APPS`:
+
+```python
+from django.urls import reverse_lazy
+```
+
+Adicionar o bloco `UNFOLD` após `DEFAULT_AUTO_FIELD`:
+
+```python
+# ── Django Unfold Admin Configuration ──────────────────────────────────────
+UNFOLD = {
+    'SITE_TITLE': 'Kelly Sys',
+    'SITE_HEADER': 'Painel de Administração',
+    'SITE_URL': '/',
+    'SITE_ICON': None,  # Deixar None ou apontar para um favicon estático
+    'SHOW_HISTORY': True,
+    'SHOW_VIEW_ON_SITE': True,
+    'COLORS': {
+        'primary': {
+            '50': '239 246 255',
+            '100': '219 234 254',
+            '200': '191 219 254',
+            '300': '147 197 253',
+            '400': '96 165 250',
+            '500': '59 130 246',
+            '600': '17 82 212',   # #1152d4 — cor primária do projeto
+            '700': '29 78 216',
+            '800': '30 64 175',
+            '900': '30 58 138',
+            '950': '23 37 84',
+        },
+    },
+    'SIDEBAR': {
+        'show_search': True,
+        'show_all_applications': False,
+        'navigation': [
+            {
+                'title': 'Portal Escolar',
+                'separator': True,
+                'items': [
+                    {
+                        'title': 'Páginas',
+                        'icon': 'article',
+                        'link': reverse_lazy('admin:school_page_changelist'),
+                        'permission': lambda request: request.user.has_perm('school.view_page'),
+                    },
+                    {
+                        'title': 'Equipe',
+                        'icon': 'group',
+                        'link': reverse_lazy('admin:school_teammember_changelist'),
+                        'permission': lambda request: request.user.has_perm('school.view_teammember'),
+                    },
+                    {
+                        'title': 'Depoimentos',
+                        'icon': 'format_quote',
+                        'link': reverse_lazy('admin:school_testimonial_changelist'),
+                        'permission': lambda request: request.user.has_perm('school.view_testimonial'),
+                    },
+                    {
+                        'title': 'Vagas',
+                        'icon': 'work',
+                        'link': reverse_lazy('admin:hiring_jobposting_changelist'),
+                        'permission': lambda request: request.user.has_perm('hiring.view_jobposting'),
+                    },
+                    {
+                        'title': 'Departamentos',
+                        'icon': 'business',
+                        'link': reverse_lazy('admin:hiring_department_changelist'),
+                        'permission': lambda request: request.user.has_perm('hiring.view_department'),
+                    },
+                    {
+                        'title': 'Candidaturas',
+                        'icon': 'description',
+                        'link': reverse_lazy('admin:hiring_application_changelist'),
+                        'permission': lambda request: request.user.has_perm('hiring.view_application'),
+                    },
+                    {
+                        'title': 'Mensagens de Contato',
+                        'icon': 'contact_mail',
+                        'link': reverse_lazy('admin:contact_contactinquiry_changelist'),
+                        'permission': lambda request: request.user.has_perm('contact.view_contactinquiry'),
+                    },
+                ],
+            },
+            {
+                'title': 'Portal de Notícias',
+                'separator': True,
+                'items': [
+                    {
+                        'title': 'Artigos',
+                        'icon': 'newspaper',
+                        'link': reverse_lazy('admin:news_article_changelist'),
+                        'permission': lambda request: request.user.has_perm('news.view_article'),
+                    },
+                    {
+                        'title': 'Categorias',
+                        'icon': 'category',
+                        'link': reverse_lazy('admin:news_category_changelist'),
+                        'permission': lambda request: request.user.has_perm('news.view_category'),
+                    },
+                    {
+                        'title': 'Tags',
+                        'icon': 'label',
+                        'link': reverse_lazy('admin:news_tag_changelist'),
+                        'permission': lambda request: request.user.has_perm('news.view_tag'),
+                    },
+                    {
+                        'title': 'Comentários',
+                        'icon': 'chat',
+                        'link': reverse_lazy('admin:news_comment_changelist'),
+                        'permission': lambda request: request.user.has_perm('news.view_comment'),
+                    },
+                    {
+                        'title': 'Newsletter',
+                        'icon': 'mail',
+                        'link': reverse_lazy('admin:news_newslettersubscription_changelist'),
+                        'permission': lambda request: request.user.has_perm('news.view_newslettersubscription'),
+                    },
+                ],
+            },
+            {
+                'title': 'Sistema',
+                'separator': True,
+                'items': [
+                    {
+                        'title': 'Usuários',
+                        'icon': 'manage_accounts',
+                        'link': reverse_lazy('admin:accounts_customuser_changelist'),
+                        'permission': lambda request: request.user.is_superuser,
+                    },
+                    {
+                        'title': 'Configurações do Site',
+                        'icon': 'settings',
+                        'link': reverse_lazy('admin:common_siteextension_changelist'),
+                        'permission': lambda request: request.user.is_superuser,
+                    },
+                    {
+                        'title': 'Sites',
+                        'icon': 'language',
+                        'link': reverse_lazy('admin:sites_site_changelist'),
+                        'permission': lambda request: request.user.is_superuser,
+                    },
+                ],
+            },
+        ],
+    },
+}
+```
+
+**IMPORTANTE:** `reverse_lazy` deve ser importado no topo do arquivo settings com `from django.urls import reverse_lazy`. Confirmar que este import existe antes de adicionar o bloco UNFOLD.
+
+---
+
+#### FASE 6C — Dashboard Customizado com Estatísticas
+
+**Arquivo a criar:** `apps/common/dashboard.py`
+
+Este arquivo implementa uma view customizada que substitui a home do admin com cards de estatísticas reais.
+
+```python
+from django.contrib.admin import site as admin_site
+from django.contrib.auth.decorators import login_required
+from django.shortcuts import render
+from django.utils.decorators import method_decorator
+from django.views import View
+
+
+@method_decorator(login_required, name='dispatch')
+class AdminDashboardView(View):
+    """Custom admin dashboard with statistics per portal."""
+
+    def get(self, request):
+        from apps.contact.models import ContactInquiry
+        from apps.hiring.models import Application, JobPosting
+        from apps.news.models import Article, Comment, NewsletterSubscription
+
+        context = {
+            # Portal Escolar stats
+            'open_jobs': JobPosting.objects.filter(status='open').count(),
+            'pending_applications': Application.objects.filter(status='pending').count(),
+            'unread_messages': ContactInquiry.objects.filter(status='new').count(),
+
+            # Portal de Notícias stats
+            'published_articles': Article.objects.filter(status=Article.Status.PUBLISHED).count(),
+            'draft_articles': Article.objects.filter(status=Article.Status.DRAFT).count(),
+            'newsletter_subscribers': NewsletterSubscription.objects.filter(is_active=True).count(),
+            'pending_comments': Comment.objects.filter(is_active=False).count(),
+
+            # Atividade recente
+            'recent_articles': (
+                Article.objects
+                .filter(status=Article.Status.PUBLISHED)
+                .select_related('author', 'category')
+                .order_by('-published_at')[:5]
+            ),
+            'recent_applications': (
+                Application.objects
+                .select_related('job')
+                .order_by('-created_at')[:5]
+            ),
+
+            # Admin site para manter o contexto correto do admin
+            'title': 'Dashboard',
+            'has_permission': True,
+        }
+
+        # Adicionar contexto padrão do admin
+        context.update(admin_site.each_context(request))
+
+        return render(request, 'admin/dashboard.html', context)
+```
+
+**Arquivo a criar:** `templates/admin/dashboard.html`
+
+```html
+{% extends "admin/base_site.html" %}
+{% load i18n %}
+
+{% block content %}
+<div class="py-8">
+
+  <!-- Boas-vindas -->
+  <div class="mb-8 p-6 bg-white dark:bg-gray-900 rounded-xl border border-gray-100 dark:border-gray-800 shadow-sm flex items-center justify-between">
+    <div>
+      <h1 class="text-2xl font-bold text-gray-900 dark:text-white">
+        {% blocktrans with name=request.user.get_full_name|default:request.user.username %}Bem-vindo, {{ name }}{% endblocktrans %}
+      </h1>
+      <p class="text-sm text-gray-500 mt-1">
+        {% trans "Painel de controle — Kelly Sys" %}
+      </p>
+    </div>
+    <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">
+      {{ request.user.get_role_display|default:"Staff" }}
+    </span>
+  </div>
+
+  <!-- Estatísticas em 2 colunas -->
+  <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+
+    <!-- Portal Escolar -->
+    <div class="bg-white dark:bg-gray-900 rounded-xl border border-gray-100 dark:border-gray-800 shadow-sm p-6">
+      <h2 class="text-sm font-bold uppercase tracking-widest text-gray-400 mb-4 flex items-center gap-2">
+        <span class="material-symbols-outlined text-[18px]">school</span>
+        {% trans "Portal Escolar" %}
+      </h2>
+      <div class="grid grid-cols-3 gap-4">
+        <a href="{% url 'admin:hiring_jobposting_changelist' %}?status=open" class="flex flex-col items-center p-4 rounded-lg bg-blue-50 dark:bg-blue-900/20 hover:bg-blue-100 dark:hover:bg-blue-900/40 transition-colors">
+          <span class="text-3xl font-bold text-blue-600 dark:text-blue-400">{{ open_jobs }}</span>
+          <span class="text-xs text-gray-500 mt-1 text-center">{% trans "Vagas Abertas" %}</span>
+        </a>
+        <a href="{% url 'admin:hiring_application_changelist' %}?status=pending" class="flex flex-col items-center p-4 rounded-lg bg-amber-50 dark:bg-amber-900/20 hover:bg-amber-100 transition-colors">
+          <span class="text-3xl font-bold text-amber-600 dark:text-amber-400">{{ pending_applications }}</span>
+          <span class="text-xs text-gray-500 mt-1 text-center">{% trans "Candidaturas" %}</span>
+        </a>
+        <a href="{% url 'admin:contact_contactinquiry_changelist' %}?status=new" class="flex flex-col items-center p-4 rounded-lg bg-red-50 dark:bg-red-900/20 hover:bg-red-100 transition-colors">
+          <span class="text-3xl font-bold text-red-600 dark:text-red-400">{{ unread_messages }}</span>
+          <span class="text-xs text-gray-500 mt-1 text-center">{% trans "Mensagens" %}</span>
+        </a>
+      </div>
+    </div>
+
+    <!-- Portal de Notícias -->
+    <div class="bg-white dark:bg-gray-900 rounded-xl border border-gray-100 dark:border-gray-800 shadow-sm p-6">
+      <h2 class="text-sm font-bold uppercase tracking-widest text-gray-400 mb-4 flex items-center gap-2">
+        <span class="material-symbols-outlined text-[18px]">newspaper</span>
+        {% trans "Portal de Notícias" %}
+      </h2>
+      <div class="grid grid-cols-2 gap-4">
+        <a href="{% url 'admin:news_article_changelist' %}?status=published" class="flex flex-col items-center p-4 rounded-lg bg-green-50 dark:bg-green-900/20 hover:bg-green-100 transition-colors">
+          <span class="text-3xl font-bold text-green-600 dark:text-green-400">{{ published_articles }}</span>
+          <span class="text-xs text-gray-500 mt-1 text-center">{% trans "Publicados" %}</span>
+        </a>
+        <a href="{% url 'admin:news_article_changelist' %}?status=draft" class="flex flex-col items-center p-4 rounded-lg bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 transition-colors">
+          <span class="text-3xl font-bold text-gray-600 dark:text-gray-400">{{ draft_articles }}</span>
+          <span class="text-xs text-gray-500 mt-1 text-center">{% trans "Rascunhos" %}</span>
+        </a>
+        <a href="{% url 'admin:news_newslettersubscription_changelist' %}?is_active=True" class="flex flex-col items-center p-4 rounded-lg bg-indigo-50 dark:bg-indigo-900/20 hover:bg-indigo-100 transition-colors">
+          <span class="text-3xl font-bold text-indigo-600 dark:text-indigo-400">{{ newsletter_subscribers }}</span>
+          <span class="text-xs text-gray-500 mt-1 text-center">{% trans "Assinantes" %}</span>
+        </a>
+        <a href="{% url 'admin:news_comment_changelist' %}?is_active=False" class="flex flex-col items-center p-4 rounded-lg bg-orange-50 dark:bg-orange-900/20 hover:bg-orange-100 transition-colors">
+          <span class="text-3xl font-bold text-orange-600 dark:text-orange-400">{{ pending_comments }}</span>
+          <span class="text-xs text-gray-500 mt-1 text-center">{% trans "Comentários para revisar" %}</span>
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Ações Rápidas -->
+  <div class="bg-white dark:bg-gray-900 rounded-xl border border-gray-100 dark:border-gray-800 shadow-sm p-6 mb-8">
+    <h2 class="text-sm font-bold uppercase tracking-widest text-gray-400 mb-4">{% trans "Ações Rápidas" %}</h2>
+    <div class="flex flex-wrap gap-3">
+      <a href="{% url 'admin:news_article_add' %}" class="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-semibold hover:bg-blue-700 transition-colors">
+        <span class="material-symbols-outlined text-[16px]">add</span>
+        {% trans "Novo Artigo" %}
+      </a>
+      <a href="{% url 'admin:hiring_jobposting_add' %}" class="inline-flex items-center gap-2 px-4 py-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 rounded-lg text-sm font-semibold hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+        <span class="material-symbols-outlined text-[16px]">work</span>
+        {% trans "Nova Vaga" %}
+      </a>
+      <a href="{% url 'admin:hiring_application_changelist' %}" class="inline-flex items-center gap-2 px-4 py-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 rounded-lg text-sm font-semibold hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+        <span class="material-symbols-outlined text-[16px]">description</span>
+        {% trans "Ver Candidaturas" %}
+      </a>
+      <a href="{% url 'admin:contact_contactinquiry_changelist' %}" class="inline-flex items-center gap-2 px-4 py-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 rounded-lg text-sm font-semibold hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+        <span class="material-symbols-outlined text-[16px]">contact_mail</span>
+        {% trans "Mensagens" %}
+      </a>
+    </div>
+  </div>
+
+  <!-- Atividade Recente — 2 colunas -->
+  <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+
+    <!-- Últimos Artigos -->
+    <div class="bg-white dark:bg-gray-900 rounded-xl border border-gray-100 dark:border-gray-800 shadow-sm overflow-hidden">
+      <div class="px-6 py-4 border-b border-gray-100 dark:border-gray-800 flex items-center justify-between">
+        <h2 class="text-sm font-bold text-gray-700 dark:text-gray-300">{% trans "Últimos Artigos" %}</h2>
+        <a href="{% url 'admin:news_article_changelist' %}" class="text-xs text-blue-600 hover:underline">{% trans "Ver todos" %}</a>
+      </div>
+      <table class="w-full text-sm">
+        {% for article in recent_articles %}
+        <tr class="border-b border-gray-50 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
+          <td class="px-6 py-3">
+            <a href="{% url 'admin:news_article_change' article.pk %}" class="font-medium text-gray-900 dark:text-white hover:text-blue-600 line-clamp-1">{{ article.title }}</a>
+            <div class="text-xs text-gray-400 mt-0.5">{{ article.author.get_full_name|default:article.author.username }} · {{ article.published_at|date:"d/m/Y" }}</div>
+          </td>
+          <td class="px-6 py-3 text-right">
+            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold
+              {% if article.status == 'published' %}bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300
+              {% elif article.status == 'draft' %}bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400
+              {% else %}bg-orange-100 text-orange-700{% endif %}">
+              {{ article.get_status_display }}
+            </span>
+          </td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="2" class="px-6 py-6 text-center text-gray-400 text-sm">{% trans "Nenhum artigo publicado ainda." %}</td></tr>
+        {% endfor %}
+      </table>
+    </div>
+
+    <!-- Últimas Candidaturas -->
+    <div class="bg-white dark:bg-gray-900 rounded-xl border border-gray-100 dark:border-gray-800 shadow-sm overflow-hidden">
+      <div class="px-6 py-4 border-b border-gray-100 dark:border-gray-800 flex items-center justify-between">
+        <h2 class="text-sm font-bold text-gray-700 dark:text-gray-300">{% trans "Últimas Candidaturas" %}</h2>
+        <a href="{% url 'admin:hiring_application_changelist' %}" class="text-xs text-blue-600 hover:underline">{% trans "Ver todas" %}</a>
+      </div>
+      <table class="w-full text-sm">
+        {% for app in recent_applications %}
+        <tr class="border-b border-gray-50 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
+          <td class="px-6 py-3">
+            <a href="{% url 'admin:hiring_application_change' app.pk %}" class="font-medium text-gray-900 dark:text-white hover:text-blue-600">{{ app.first_name }} {{ app.last_name }}</a>
+            <div class="text-xs text-gray-400 mt-0.5">{{ app.job.title }} · {{ app.created_at|date:"d/m/Y" }}</div>
+          </td>
+          <td class="px-6 py-3 text-right">
+            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold
+              {% if app.status == 'pending' %}bg-yellow-100 text-yellow-800
+              {% elif app.status == 'reviewing' %}bg-blue-100 text-blue-800
+              {% elif app.status == 'approved' %}bg-green-100 text-green-800
+              {% else %}bg-red-100 text-red-800{% endif %}">
+              {{ app.get_status_display }}
+            </span>
+          </td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="2" class="px-6 py-6 text-center text-gray-400 text-sm">{% trans "Nenhuma candidatura ainda." %}</td></tr>
+        {% endfor %}
+      </table>
+    </div>
+  </div>
+
+</div>
+{% endblock %}
+```
+
+**Registrar o dashboard no settings e urls:**
+
+Em `config/settings/base.py`, adicionar dentro do bloco `UNFOLD`:
+
+```python
+'INDEX_DASHBOARD': 'apps.common.dashboard.AdminDashboardView',
+```
+
+**IMPORTANTE:** A chave `INDEX_DASHBOARD` aponta para a classe view, não para uma URL.
+
+---
+
+#### FASE 6D — i18n PT/BR no Admin
+
+**Arquivo a modificar:** `config/settings/base.py`
+
+1. Adicionar `LANGUAGES` logo após `LANGUAGE_CODE`:
+
+```python
+LANGUAGE_CODE = 'pt-br'
+LANGUAGES = [
+    ('pt-br', 'Português (BR)'),
+    ('en', 'English'),
+]
+```
+
+2. Adicionar `LocaleMiddleware` no MIDDLEWARE entre `SessionMiddleware` e `CommonMiddleware`:
+
+```python
+MIDDLEWARE = [
+    'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',
+    'django.contrib.sessions.middleware.SessionMiddleware',
+    'django.middleware.locale.LocaleMiddleware',  # ← ADICIONAR AQUI
+    'django.middleware.common.CommonMiddleware',
+    # ... resto igual
+]
+```
+
+**Arquivo a modificar:** `config/urls.py`
+
+Adicionar antes das urlpatterns existentes:
+
+```python
+from django.conf.urls.i18n import i18n_patterns
+from django.views.i18n import set_language
+
+# No urlpatterns, adicionar:
+path('i18n/', include('django.conf.urls.i18n')),
+```
+
+A linha completa do urlpatterns ficará:
+
+```python
+urlpatterns = [
+    path('i18n/', include('django.conf.urls.i18n')),
+    path('admin/', admin.site.urls),
+    # ... resto igual
+]
+```
+
+---
+
+#### FASE 6E — Validação Final
+
+Após implementar todas as fases, executar:
+
+```bash
+python manage.py check
+```
+
+**Zero erros é obrigatório antes de concluir.**
+
+Verificações manuais:
+1. Abrir `/admin/` e confirmar que a sidebar mostra 3 grupos: "Portal Escolar", "Portal de Notícias", "Sistema"
+2. Confirmar que a home do admin mostra cards de estatísticas (não a lista padrão de apps)
+3. Confirmar que todos os admin.py usam `unfold.admin.ModelAdmin`:
+   ```bash
+   grep -r "from unfold.admin import ModelAdmin" apps/
+   ```
+4. Confirmar que o admin exibe textos em português por padrão
+5. Confirmar que o link `/i18n/set_language/` funciona (seletor de idioma)
+
+---
+
+### Checklist de Aceite (marque antes de entregar)
+
+- [ ] `manage.py check` → 0 erros
+- [ ] Sidebar mostra Portal Escolar / Portal de Notícias / Sistema
+- [ ] Dashboard home com cards de stats reais
+- [ ] Todos os admin.py importam de `unfold.admin`
+- [ ] Admin em português por padrão
+- [ ] `LocaleMiddleware` adicionado ao MIDDLEWARE
+- [ ] `LANGUAGES` configurado no settings
+- [ ] `i18n/` path no urlpatterns
+- [ ] Template `templates/admin/dashboard.html` criado
 
 ##### 5A.1 — Adicionar `get_absolute_url()` e `reading_time` ao model Article
 

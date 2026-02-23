@@ -6,7 +6,7 @@ def get_sidebar_context():
     from .models import Article, Category, Tag
 
     popular_articles = (
-        Article.objects
+        Article.on_site
         .filter(status=Article.Status.PUBLISHED)
         .order_by('-view_count')[:5]
         .select_related('category')

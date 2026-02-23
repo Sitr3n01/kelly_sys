@@ -1,0 +1,218 @@
+{% extends 'base_news.html' %}
+
+{% block title %}Minha Conta - The Chronicle{% endblock %}
+
+{% block content %}
+<div class="max-w-[1200px] mx-auto px-6 xl:px-0 py-16 md:py-20 font-display">
+    <div class="flex items-center gap-4 mb-12">
+        <h1 class="text-4xl md:text-5xl font-bold tracking-tight text-slate-900 dark:text-white"
+            x-text="t('Minha Conta', 'My Account')">Minha Conta</h1>
+        <div class="h-8 w-px bg-slate-200 dark:bg-slate-700 mx-2 hidden sm:block"></div>
+        <p class="text-slate-500 dark:text-slate-400 font-ui text-lg mt-2 sm:mt-0 hidden sm:block">
+            {{ request.user.get_full_name|default:request.user.username }}
+        </p>
+    </div>
+
+    <div class="grid lg:grid-cols-[280px_1fr] gap-12 lg:gap-20">
+        <!-- Sidebar Navigation -->
+        <aside class="space-y-1">
+            <a href="?tab=saved"
+                class="flex items-center gap-3 px-4 py-3 rounded-lg font-ui font-semibold text-sm transition-colors {% if not request.GET.tab or request.GET.tab == 'saved' %}bg-primary/10 text-primary dark:bg-primary/20 dark:text-primary-300{% else %}text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/50 hover:text-slate-900 dark:hover:text-white{% endif %}">
+                <span class="material-symbols-outlined text-[20px]">bookmark</span>
+                <span x-text="t('Artigos Salvos', 'Saved Articles')">Artigos Salvos</span>
+            </a>
+
+            <a href="?tab=comments"
+                class="flex items-center gap-3 px-4 py-3 rounded-lg font-ui font-semibold text-sm transition-colors {% if request.GET.tab == 'comments' %}bg-primary/10 text-primary dark:bg-primary/20 dark:text-primary-300{% else %}text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/50 hover:text-slate-900 dark:hover:text-white{% endif %}">
+                <span class="material-symbols-outlined text-[20px]">chat_bubble</span>
+                <span x-text="t('Meus Comentários', 'My Comments')">Meus Comentários</span>
+            </a>
+
+            <a href="?tab=likes"
+                class="flex items-center gap-3 px-4 py-3 rounded-lg font-ui font-semibold text-sm transition-colors {% if request.GET.tab == 'likes' %}bg-primary/10 text-primary dark:bg-primary/20 dark:text-primary-300{% else %}text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/50 hover:text-slate-900 dark:hover:text-white{% endif %}">
+                <span class="material-symbols-outlined text-[20px]">thumb_up</span>
+                <span x-text="t('Artigos Curtidos', 'Liked Articles')">Artigos Curtidos</span>
+            </a>
+
+            <div class="h-px w-full bg-slate-200 dark:bg-slate-800 my-4"></div>
+
+            <form action="{% url 'accounts:logout' %}?next={{ request.path }}" method="post">
+                {% csrf_token %}
+                <button type="submit"
+                    class="w-full flex items-center gap-3 px-4 py-3 rounded-lg font-ui font-semibold text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors">
+                    <span class="material-symbols-outlined text-[20px]">logout</span>
+                    <span x-text="t('Sair', 'Logout')">Sair</span>
+                </button>
+            </form>
+        </aside>
+
+        <!-- Main Content Area -->
+        <div class="min-h-[400px]">
+            {% if not request.GET.tab or request.GET.tab == 'saved' %}
+            <!-- Saved Articles Tab -->
+            <div class="space-y-6">
+                <h2 class="text-2xl font-bold text-slate-900 dark:text-white mb-6"
+                    x-text="t('Artigos Salvos', 'Saved Articles')">Artigos Salvos</h2>
+
+                {% if saved_articles %}
+                <div class="grid gap-6">
+                    {% for article in saved_articles %}
+                    <div
+                        class="flex gap-6 items-start group p-4 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800/30 border border-transparent hover:border-slate-100 dark:hover:border-slate-800 transition-all">
+                        <div class="w-24 h-24 rounded-lg bg-slate-200 dark:bg-slate-800 flex-shrink-0 overflow-hidden">
+                            {% if article.featured_image %}
+                            <img src="{{ article.featured_image.url }}" alt="{{ article.title }}"
+                                class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500">
+                            {% else %}
+                            <div class="w-full h-full flex items-center justify-center text-slate-400">
+                                <span class="material-symbols-outlined text-[32px]">image</span>
+                            </div>
+                            {% endif %}
+                        </div>
+                        <div class="flex-grow">
+                            <div class="flex justify-between items-start gap-4">
+                                <a href="{% url 'news:article_detail' article.slug %}" class="block">
+                                    <h3
+                                        class="text-lg font-bold text-slate-900 dark:text-white group-hover:text-primary transition-colors leading-tight mb-2">
+                                        {{ article.title }}</h3>
+                                    <p class="text-sm text-slate-500 font-ui line-clamp-2">{{
+                                        article.excerpt|default:article.content|striptags }}</p>
+                                </a>
+
+                                <!-- Remove Bookmark Button -->
+                                <button
+                                    class="flex-shrink-0 w-8 h-8 flex items-center justify-center rounded-full text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-red-500 transition-colors"
+                                    hx-post="{% url 'news:toggle_bookmark' article.id %}?source=dashboard" hx-swap="outerHTML"
+                                    hx-target="closest .group" :aria-label="t('Remover', 'Remove')">
+                                    <span class="material-symbols-outlined text-[20px]">bookmark_remove</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div
+                    class="text-center py-20 px-6 bg-slate-50 dark:bg-slate-800/30 rounded-[2rem] border border-slate-100 dark:border-slate-800">
+                    <span
+                        class="material-symbols-outlined text-[48px] text-slate-300 dark:text-slate-600 mb-4">bookmark_border</span>
+                    <h3 class="text-lg font-bold text-slate-900 dark:text-white mb-2"
+                        x-text="t('Nenhum artigo salvo', 'No saved articles')">Nenhum artigo salvo</h3>
+                    <p class="text-slate-500 font-ui text-sm mb-6 max-w-sm mx-auto"
+                        x-text="t('Os artigos que você curtir e decidir guardar para ler depois irão aparecer aqui.', 'Articles you like and decide to keep for later reading will appear here.')">
+                        Os artigos que você curtir e guardar aparecerão aqui.</p>
+                    <a href="{% url 'news:list' %}"
+                        class="inline-flex items-center gap-2 font-ui font-bold text-sm bg-slate-900 dark:bg-white text-white dark:text-black px-6 py-2.5 rounded-full hover:bg-slate-800 dark:hover:bg-slate-200 transition-colors">
+                        <span x-text="t('Explorar Artigos', 'Explore Articles')">Explorar Artigos</span>
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+
+            {% elif request.GET.tab == 'comments' %}
+            <!-- My Comments Tab -->
+            <div class="space-y-6">
+                <h2 class="text-2xl font-bold text-slate-900 dark:text-white mb-6"
+                    x-text="t('Meus Comentários', 'My Comments')">Meus Comentários</h2>
+
+                {% if user_comments %}
+                <div class="space-y-6">
+                    {% for comment in user_comments %}
+                    <div
+                        class="p-6 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 group">
+                        <div class="flex items-center justify-between gap-4 mb-4">
+                            <a href="{% url 'news:article_detail' comment.article.slug %}#comments-section"
+                                class="font-ui text-sm font-semibold text-primary hover:underline line-clamp-1">
+                                Em: {{ comment.article.title }}
+                            </a>
+                            <span class="text-xs text-slate-400 font-ui flex-shrink-0">{{ comment.created_at|date:"d M,
+                                Y" }}</span>
+                        </div>
+                        <p class="text-slate-700 dark:text-slate-300 font-ui text-sm leading-relaxed">
+                            "{{ comment.content }}"
+                        </p>
+
+                        <div class="mt-4 pt-4 border-t border-slate-100 dark:border-slate-800 flex justify-end">
+                            <button
+                                class="text-xs font-ui font-semibold text-red-500 hover:text-red-700 transition-colors flex items-center gap-1"
+                                hx-post="{% url 'news:delete_comment' comment.id %}"
+                                hx-confirm="Tem certeza que deseja excluir este comentário?" hx-target="closest .group"
+                                hx-swap="outerHTML">
+                                <span class="material-symbols-outlined text-[16px]">delete</span>
+                                <span x-text="t('Apagar', 'Delete')">Apagar</span>
+                            </button>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div
+                    class="text-center py-20 px-6 bg-slate-50 dark:bg-slate-800/30 rounded-[2rem] border border-slate-100 dark:border-slate-800">
+                    <span
+                        class="material-symbols-outlined text-[48px] text-slate-300 dark:text-slate-600 mb-4">chat_bubble_outline</span>
+                    <h3 class="text-lg font-bold text-slate-900 dark:text-white mb-2"
+                        x-text="t('Você ainda não comentou', 'You have not commented yet')">Nenhum comentário</h3>
+                    <p class="text-slate-500 font-ui text-sm max-w-sm mx-auto"
+                        x-text="t('Participe da conversa! Seus comentários em nossos artigos ficarão registrados aqui.', 'Join the conversation! Your comments on our articles will be listed here.')">
+                        Participe da conversa!</p>
+                </div>
+                {% endif %}
+            </div>
+
+            {% elif request.GET.tab == 'likes' %}
+            <!-- Liked Articles Tab -->
+            <div class="space-y-6">
+                <h2 class="text-2xl font-bold text-slate-900 dark:text-white mb-6"
+                    x-text="t('Artigos Curtidos', 'Liked Articles')">Artigos Curtidos</h2>
+
+                {% if liked_articles %}
+                <div class="grid sm:grid-cols-2 gap-6">
+                    {% for article in liked_articles %}
+                    <a href="{% url 'news:article_detail' article.slug %}"
+                        class="flex flex-col gap-4 group p-4 border border-slate-200 dark:border-slate-800 rounded-2xl hover:border-primary/50 transition-colors">
+                        <div class="w-full h-40 bg-slate-100 dark:bg-slate-800 rounded-xl overflow-hidden relative">
+                            <div class="absolute inset-0 bg-black/10 group-hover:bg-transparent transition-colors z-10">
+                            </div>
+                            <div
+                                class="absolute top-3 right-3 z-20 bg-white/90 dark:bg-black/90 backdrop-blur rounded-full px-2 py-1 flex items-center gap-1 text-primary shadow-sm">
+                                <span class="material-symbols-outlined text-[14px]">thumb_up</span>
+                            </div>
+                            {% if article.featured_image %}
+                            <img src="{{ article.featured_image.url }}" alt="{{ article.title }}"
+                                class="w-full h-full object-cover">
+                            {% else %}
+                            <div class="w-full h-full flex items-center justify-center text-slate-400">
+                                <span class="material-symbols-outlined text-[32px]">image</span>
+                            </div>
+                            {% endif %}
+                        </div>
+                        <div>
+                            {% if article.category %}
+                            <span class="text-xs font-bold font-ui text-primary uppercase tracking-wider mb-2 block">{{
+                                article.category.name }}</span>
+                            {% endif %}
+                            <h3
+                                class="text-base font-bold text-slate-900 dark:text-white group-hover:text-primary transition-colors leading-snug">
+                                {{ article.title }}</h3>
+                        </div>
+                    </a>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div
+                    class="text-center py-20 px-6 bg-slate-50 dark:bg-slate-800/30 rounded-[2rem] border border-slate-100 dark:border-slate-800">
+                    <span
+                        class="material-symbols-outlined text-[48px] text-slate-300 dark:text-slate-600 mb-4">thumb_up_off</span>
+                    <h3 class="text-lg font-bold text-slate-900 dark:text-white mb-2"
+                        x-text="t('Nenhum like dado', 'No likes given')">Nenhum like</h3>
+                    <p class="text-slate-500 font-ui text-sm max-w-sm mx-auto"
+                        x-text="t('Apoie nossos autores curtindo artigos que você achar interessantes.', 'Support our authors by liking articles you find interesting.')">
+                        Apoie nossos autores e curta matérias.</p>
+                </div>
+                {% endif %}
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -36,3 +36,10 @@ docker/postgres_data/
 venv/
 .venv/
 env/
+
+# Claude Code local settings (session-specific, not shared)
+.claude/settings.local.json
+
+# Temporary debug/utility scripts created during development
+debug_*.py
+replace_*.py

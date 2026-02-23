@@ -1,0 +1,43 @@
+{% comment %}
+Partial para a lista de comentários.
+Context: comments (queryset), article
+{% endcomment %}
+<div id="comments-list" class="flex flex-col gap-8">
+    {% for comment in comments %}
+    <div id="comment-{{ comment.pk }}" class="flex gap-4">
+        <div class="w-10 h-10 rounded-full bg-slate-200 dark:bg-slate-700 flex-shrink-0 flex items-center justify-center font-bold text-slate-500 text-sm">
+            {% if comment.user.avatar %}
+            <img src="{{ comment.user.avatar.url }}" alt="{{ comment.user.get_full_name|default:comment.user.username }}" class="w-full h-full rounded-full object-cover">
+            {% else %}
+            {{ comment.user.get_full_name|default:comment.user.username|first|upper }}
+            {% endif %}
+        </div>
+        <div class="flex-1">
+            <div class="flex items-center gap-2 mb-1">
+                <span class="font-bold font-ui text-slate-900 dark:text-white text-sm">{{ comment.user.get_full_name|default:comment.user.username }}</span>
+                <span class="text-xs text-slate-400 font-ui">{{ comment.created_at|timesince }} <span x-text="t('atrás', 'ago')">ago</span></span>
+            </div>
+            <p class="text-slate-700 dark:text-slate-300 font-ui text-sm leading-relaxed mb-2">
+                {{ comment.content }}
+            </p>
+            {% if comment.user == request.user %}
+            <div class="flex items-center gap-4 text-xs font-ui text-slate-500">
+                <button
+                    hx-post="{% url 'news:delete_comment' comment.pk %}"
+                    hx-target="#comment-{{ comment.pk }}"
+                    hx-swap="outerHTML"
+                    hx-confirm="{{ 'Tem certeza que deseja remover este comentário?' }}"
+                    class="hover:text-red-500 transition-colors flex items-center gap-1">
+                    <span class="material-symbols-outlined text-[14px]">delete</span>
+                    <span x-text="t('Remover', 'Remove')">Remove</span>
+                </button>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    {% empty %}
+    <p class="text-slate-500 dark:text-slate-400 font-ui text-sm text-center py-4" x-text="t('Ainda não há comentários. Seja o primeiro!', 'No comments yet. Be the first!')">
+        Ainda não há comentários. Seja o primeiro!
+    </p>
+    {% endfor %}
+</div>

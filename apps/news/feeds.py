@@ -1,4 +1,5 @@
 from django.contrib.syndication.views import Feed
+from django.shortcuts import get_object_or_404
 from django.urls import reverse
 
 from .models import Article, Category
@@ -38,7 +39,7 @@ class LatestArticlesFeed(Feed):
 class CategoryFeed(Feed):
 
     def get_object(self, request, slug):
-        return Category.objects.get(slug=slug)
+        return get_object_or_404(Category, slug=slug)
 
     def title(self, obj):
         return f'Portal de Notícias - {obj.name}'
