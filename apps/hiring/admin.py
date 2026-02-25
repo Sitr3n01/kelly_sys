@@ -20,36 +20,36 @@ class JobPostingAdmin(ModelAdmin):
     readonly_fields = ['created_at', 'updated_at']
     date_hierarchy = 'published_at'
     fieldsets = [
-        ('Job Details', {
+        ('Detalhes da Vaga', {
             'fields': ('title', 'slug', 'department', 'employment_type', 'location', 'salary_range'),
         }),
-        ('Description', {
+        ('Descrição', {
             'fields': ('description', 'requirements'),
         }),
-        ('Publication', {
+        ('Publicação', {
             'fields': ('status', 'published_at', 'deadline'),
         }),
         ('SEO', {
             'fields': ('meta_title', 'meta_description', 'meta_keywords'),
             'classes': ('collapse',),
         }),
-        ('Timestamps', {
+        ('Datas', {
             'fields': ('created_at', 'updated_at'),
             'classes': ('collapse',),
         }),
     ]
     actions = ['open_postings', 'close_postings']
 
-    @admin.action(description='Open selected job postings')
+    @admin.action(description='Abrir vagas selecionadas')
     def open_postings(self, request, queryset):
         from django.utils import timezone
         updated = queryset.update(status='open', published_at=timezone.now())
-        self.message_user(request, f'{updated} posting(s) opened.')
+        self.message_user(request, f'{updated} vaga(s) aberta(s).')
 
-    @admin.action(description='Close selected job postings')
+    @admin.action(description='Fechar vagas selecionadas')
     def close_postings(self, request, queryset):
         updated = queryset.update(status='closed')
-        self.message_user(request, f'{updated} posting(s) closed.')
+        self.message_user(request, f'{updated} vaga(s) fechada(s).')
 
 
 @admin.register(Application)
@@ -59,33 +59,33 @@ class ApplicationAdmin(ModelAdmin):
     search_fields = ['first_name', 'last_name', 'email']
     readonly_fields = ['first_name', 'last_name', 'email', 'phone', 'cover_letter', 'resume', 'created_at', 'updated_at']
     fieldsets = [
-        ('Applicant', {
+        ('Candidato', {
             'fields': ('first_name', 'last_name', 'email', 'phone'),
         }),
-        ('Application', {
+        ('Candidatura', {
             'fields': ('job', 'cover_letter', 'resume'),
         }),
-        ('Review', {
+        ('Avaliação', {
             'fields': ('status', 'notes'),
         }),
-        ('Timestamps', {
+        ('Datas', {
             'fields': ('created_at', 'updated_at'),
             'classes': ('collapse',),
         }),
     ]
-    actions = ['mark_reviewing', 'mark_approved', 'mark_rejected']
+    actions = ['mark_reviewing', 'mark_accepted', 'mark_rejected']
 
-    @admin.action(description='Mark as Under Review')
+    @admin.action(description='Marcar como Em Análise')
     def mark_reviewing(self, request, queryset):
         updated = queryset.update(status='reviewing')
-        self.message_user(request, f'{updated} application(s) marked as reviewing.')
+        self.message_user(request, f'{updated} candidatura(s) marcada(s) como em análise.')
 
-    @admin.action(description='Mark as Approved')
-    def mark_approved(self, request, queryset):
-        updated = queryset.update(status='approved')
-        self.message_user(request, f'{updated} application(s) approved.')
+    @admin.action(description='Marcar como Aceito')
+    def mark_accepted(self, request, queryset):
+        updated = queryset.update(status='accepted')
+        self.message_user(request, f'{updated} candidatura(s) aceita(s).')
 
-    @admin.action(description='Mark as Rejected')
+    @admin.action(description='Marcar como Rejeitado')
     def mark_rejected(self, request, queryset):
         updated = queryset.update(status='rejected')
-        self.message_user(request, f'{updated} application(s) rejected.')
+        self.message_user(request, f'{updated} candidatura(s) rejeitada(s).')

@@ -3,7 +3,7 @@
     <div>
         <div class="flex items-center justify-between mb-8">
             <h4 class="font-ui text-sm font-bold uppercase tracking-widest text-slate-900 dark:text-white"
-                x-text="t('Em Alta', 'Trending Now')">Trending Now
+                x-text="t('Mais Lidas', 'Most Read')">Mais Lidas
             </h4>
             <span class="w-2 h-2 rounded-full bg-red-500 animate-pulse"></span>
         </div>
@@ -16,10 +16,7 @@
                 <div
                     class="absolute left-0 top-1.5 w-[15px] h-[15px] bg-background-light dark:bg-background-dark border-2 {% if forloop.first %}border-primary{% else %}border-slate-300 dark:border-slate-600 group-hover:border-primary{% endif %} rounded-full z-10 transition-colors">
                 </div>
-                <span
-                    class="font-ui text-xs font-semibold {% if forloop.first %}text-primary{% else %}text-slate-500{% endif %} mb-1 block">
-                    {{ article.published_at|date:"H:i" }}
-                </span>
+
                 <a class="block group-hover:translate-x-1 transition-transform"
                     href="{% url 'news:article_detail' article.slug %}">
                     <h5

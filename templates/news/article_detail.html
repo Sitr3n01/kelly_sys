@@ -1,4 +1,5 @@
 {% extends 'base_news.html' %}
+{% load sanitize %}
 
 {% block title %}{{ article.meta_title|default:article.title }} - {{ current_site.name }}{% endblock %}
 {% block meta_description %}{{ article.meta_description|default:article.excerpt }}{% endblock %}
@@ -188,10 +189,8 @@
                         {% endif %}
                     </div>
                     <div class="flex flex-col">
-                        <span class="text-sm font-bold text-slate-900 dark:text-slate-100 font-ui">{{
-                            article.author.get_full_name|default:article.author.username }}</span>
-                        <span class="text-xs text-slate-500 dark:text-slate-400 font-ui">{{ article.published_at|date:"M
-                            d, Y" }} • {{ article.reading_time }} <span x-text="t('min de leitura', 'min read')">min
+                        <span class="text-sm font-bold text-slate-900 dark:text-slate-100 font-ui">{{ article.author.get_full_name|default:article.author.username }}</span>
+                        <span class="text-xs text-slate-500 dark:text-slate-400 font-ui">{{ article.published_at|date:"M d, Y" }} • {{ article.reading_time }} <span x-text="t('min de leitura', 'min read')">min
                                 read</span></span>
                     </div>
                     {% endif %}
@@ -232,7 +231,7 @@
             <div class="hidden xl:flex absolute -left-24 top-0 h-full flex-col">
                 <div class="sticky top-24 flex flex-col gap-4">
                     <!-- Like Button with Count (HTMX) -->
-                    {% include 'news/partials/like_button.html' with article=article like_count=like_count is_liked=False %}
+                    {% include 'news/partials/like_button.html' with article=article like_count=like_count is_liked=is_liked %}
 
                     <!-- Comments Link with Count -->
                     <div class="flex flex-col items-center gap-1">
@@ -260,7 +259,7 @@
 
             <!-- Article Body -->
             <div class="article-body font-display">
-                {{ article.content|safe }}
+                {{ article.content|sanitize_html }}
             </div>
 
             <!-- Article Footer -->
@@ -287,17 +286,10 @@
 
                     {% if user.is_authenticated %}
                     <!-- New Comment Form (authenticated) -->
-                    <form
-                        hx-post="{% url 'news:add_comment' article.pk %}"
-                        hx-target="#comments-list"
-                        hx-swap="outerHTML"
-                        hx-on::after-request="this.reset()"
-                        class="mb-10 flex flex-col gap-3">
+                    <form hx-post="{% url 'news:add_comment' article.pk %}" hx-target="#comments-list"
+                        hx-swap="outerHTML" hx-on::after-request="this.reset()" class="mb-10 flex flex-col gap-3">
                         {% csrf_token %}
-                        <textarea
-                            name="content"
-                            rows="3"
-                            required
+                        <textarea name="content" rows="3" required
                             :placeholder="t('Escreva seu comentário...', 'Write your comment...')"
                             placeholder="Escreva seu comentário..."
                             class="w-full rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-4 py-3 text-sm text-slate-900 dark:text-white placeholder-slate-400 focus:border-primary focus:ring-1 focus:ring-primary font-ui outline-none resize-none transition-all"></textarea>
@@ -381,16 +373,14 @@
                     </div>
                     <div class="flex flex-col gap-1">
                         {% if article.category %}
-                        <span class="text-xs font-bold uppercase text-primary font-ui">{{ article.category.name
-                            }}</span>
+                        <span class="text-xs font-bold uppercase text-primary font-ui">{{ article.category.name }}</span>
                         {% endif %}
                         <h4
                             class="text-lg font-bold leading-tight text-slate-900 group-hover:text-primary dark:text-slate-100 transition-colors font-display">
                             {{ article.title }}
                         </h4>
                         <p class="text-sm text-slate-500 dark:text-slate-400 font-ui"><span
-                                x-text="t('Por', 'By')">By</span> {{
-                            article.author.get_full_name|default:article.author.username }} • {{ article.reading_time }}
+                                x-text="t('Por', 'By')">By</span> {{ article.author.get_full_name|default:article.author.username }} • {{ article.reading_time }}
                             <span x-text="t('min de leitura', 'min read')">min read</span>
                         </p>
                     </div>

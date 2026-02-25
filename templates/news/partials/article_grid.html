@@ -1,14 +1,13 @@
 {% for article in page_obj %}
-  {% include 'news/partials/article_card.html' %}
+{% include 'news/partials/article_card.html' %}
 {% endfor %}
 
 {% if page_obj.has_next %}
 <div class="col-span-full text-center mt-8" id="load-more-container">
   <button
-    hx-get="{% url 'news:article_list_page' %}?page={{ page_obj.next_page_number }}"
-    hx-target="#articles-grid"
-    hx-swap="beforeend"
-    class="bg-white border-2 border-primary-600 text-primary-600 px-8 py-3 rounded-full font-bold hover:bg-primary-600 hover:text-white transition-colors">
+    hx-get="{% url 'news:article_list_page' %}?page={{ page_obj.next_page_number }}{% if request.GET.exclude %}&exclude={{ request.GET.exclude }}{% endif %}"
+    hx-target="#load-more-container" hx-swap="outerHTML"
+    class="bg-white border-2 border-primary text-primary px-8 py-3 rounded-full font-bold hover:bg-primary hover:text-white transition-colors">
     Carregar mais artigos
   </button>
 </div>

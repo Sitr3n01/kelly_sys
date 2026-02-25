@@ -13,13 +13,16 @@ MIDDLEWARE.insert(0, 'debug_toolbar.middleware.DebugToolbarMiddleware')  # noqa:
 
 INTERNAL_IPS = ['127.0.0.1', '0.0.0.0']
 
-# Email — catch all emails in Mailpit
-EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
-EMAIL_HOST = 'localhost'
-EMAIL_PORT = 1025
+# Email — console backend para desenvolvimento (os emails são exibidos no terminal)
+# Para testar com Mailpit, troque para smtp.EmailBackend e rode: mailpit
+EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+DEFAULT_FROM_EMAIL = 'noreply@localhost'
 
 # Simplified static files for development
 STORAGES = {
+    'default': {
+        'BACKEND': 'django.core.files.storage.FileSystemStorage',
+    },
     'staticfiles': {
         'BACKEND': 'django.contrib.staticfiles.storage.StaticFilesStorage',
     },

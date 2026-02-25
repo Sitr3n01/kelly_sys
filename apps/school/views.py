@@ -14,3 +14,9 @@ def page_detail(request, slug):
 def team_list(request):
     members = TeamMember.objects.filter(is_active=True)
     return render(request, 'school/team_list.html', {'members': members})
+
+def privacy(request):
+    return render(request, 'school/privacy.html')
+
+def about(request):
+    return render(request, 'school/about.html')

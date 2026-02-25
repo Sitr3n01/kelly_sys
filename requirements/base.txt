@@ -7,3 +7,5 @@ django-imagekit>=5.0
 whitenoise>=6.5
 django-environ>=0.11
 django-extensions>=3.2
+django-axes>=6.0
+bleach>=6.0

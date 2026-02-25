@@ -11,7 +11,7 @@ class ContactInquiryAdmin(ModelAdmin):
     search_fields = ['name', 'email', 'subject', 'message']
     readonly_fields = ['name', 'email', 'subject', 'message', 'created_at']
     fieldsets = [
-        ('Contact Details', {
+        ('Dados de Contato', {
             'fields': ('name', 'email', 'subject', 'message', 'created_at'),
         }),
         ('Status', {
@@ -20,9 +20,9 @@ class ContactInquiryAdmin(ModelAdmin):
     ]
     actions = ['mark_resolved']
 
-    @admin.action(description='Mark selected inquiries as resolved (archived)')
+    @admin.action(description='Arquivar mensagens selecionadas')
     def mark_resolved(self, request, queryset):
         # Update to archived instead of resolved since valid choices are:
         # new, read, replied, archived
         updated = queryset.update(status='archived')
-        self.message_user(request, f'{updated} inquiry(ies) marked as resolved (archived).')
+        self.message_user(request, f'{updated} mensagem(ns) arquivada(s).')

@@ -29,7 +29,7 @@
                 <input type="text" name="{{ form.username.name }}" id="{{ form.username.id_for_label }}" required
                     autofocus
                     class="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-transparent px-4 py-3 text-slate-900 dark:text-white focus:border-primary focus:ring-1 focus:ring-primary font-ui transition-all"
-                    placeholder="Seu nome de usuário">
+                    placeholder="Usuário" x-bind:placeholder="t('Usuário', 'Username')">
                 {% if form.username.errors %}
                 <p class="mt-1 text-sm text-red-500 font-ui">{{ form.username.errors.0 }}</p>
                 {% endif %}
@@ -41,10 +41,14 @@
                     x-text="t('Senha', 'Password')">Senha</label>
                 <input type="password" name="{{ form.password.name }}" id="{{ form.password.id_for_label }}" required
                     class="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-transparent px-4 py-3 text-slate-900 dark:text-white focus:border-primary focus:ring-1 focus:ring-primary font-ui transition-all"
-                    placeholder="Sua senha secreta">
+                    placeholder="Senha" x-bind:placeholder="t('Senha', 'Password')">
                 {% if form.password.errors %}
                 <p class="mt-1 text-sm text-red-500 font-ui">{{ form.password.errors.0 }}</p>
                 {% endif %}
+                <div class="mt-2 text-right">
+                    <a href="{% url 'accounts:password_reset' %}" class="text-sm font-ui text-primary hover:underline"
+                        tabindex="-1">Esqueceu a senha?</a>
+                </div>
             </div>
 
             <button type="submit"

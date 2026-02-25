@@ -2,11 +2,12 @@
 
 ## Visão Geral
 
-Sistema web unificado que gerencia dois sites de um grupo educacional:
-- **Site da Escola** — institucional com contratação e contato
-- **Portal de Notícias** — portal público de notícias
+Sistema web unificado que gerencia dois sites independentes de um grupo educacional:
+- **Portal de Notícias** ("The Chronicle") — portal público de notícias. **Quase pronto** — funcional com design aplicado, faltam refinamentos
+- **Site da Escola** — institucional com contratação e contato. **Inacabado** — models e views básicas existem, falta completar templates e design
+- **Dashboard Admin** (Django Unfold) — painel unificado para gerenciar ambos. **Em correção** — dashboard customizado nunca funcionou, sendo reconstruído na Fase 7
 
-Painel administrativo único (Django Unfold) para gerenciar ambos.
+Os portais são **independentes em dados** mas gerenciados pelo mesmo admin. Único link cruzado: botão na navbar do news → escola.
 
 ---
 
@@ -97,27 +98,79 @@ Painel administrativo único (Django Unfold) para gerenciar ambos.
 | 5L | Autenticação e dashboard de usuário (login, register, bookmarks) | ✅ Concluído |
 | 5M | Bug fixes revisão Claude: unique_per_site newsletter, sidebar filtro site, CategoryFeed 404 | ✅ Concluído |
 
-### Fase 6: Admin Enhancement — Painel Unificado Bilíngue 🔄
+### Fase 6: Admin Enhancement — Painel Unificado Bilíngue ⚠️ (parcial)
 | # | Tarefa | Status |
 |---|--------|--------|
-| 6A | Migrar todos os admin.py para `unfold.admin.ModelAdmin` (school, hiring, contact, accounts, common) | ⬜ Pendente |
-| 6B | Configurar `UNFOLD` settings: branding, sidebar agrupada por portal, cores `#1152d4` | ⬜ Pendente |
-| 6C | Dashboard customizado: cards de stats por portal, ações rápidas, atividade recente | ⬜ Pendente |
-| 6D | i18n PT/BR: `LocaleMiddleware`, `LANGUAGES`, path `i18n/` | ⬜ Pendente |
-| 6E | Melhorar admin models: fieldsets, actions, badges de role (school, hiring, contact, accounts) | ⬜ Pendente |
+| 6A | Migrar todos os admin.py para `unfold.admin.ModelAdmin` | ✅ Concluído |
+| 6B | Configurar `UNFOLD` settings: branding, sidebar agrupada por portal, cores `#1152d4` | ✅ Concluído |
+| 6C | Dashboard customizado: cards de stats por portal | ⚠️ Código escrito mas **nunca funcionou** — usava `INDEX_DASHBOARD` (inexistente no Unfold). Fix na Fase 7 |
+| 6D | i18n PT/BR: `LocaleMiddleware`, `LANGUAGES`, path `i18n/` | ✅ Concluído |
+| 6E | Melhorar admin models: fieldsets, actions, badges de role | ✅ Concluído |
+| 6F | Debug dashboard: Tailwind config ordering, URL filter fix | ✅ Concluído |
 
-### Fase 7: Portal de Notícias — Design (Google Stitch) ⬜
-| # | Tarefa | Status |
-|---|--------|--------|
-| 7.1 | Exportar template Google Stitch | ⬜ Pendente |
-| 7.2 | Adaptar paleta de cores e tipografia | ⬜ Pendente |
-| 7.3 | Implementar layout de componentes do Stitch | ⬜ Pendente |
-| 7.4 | Responsividade mobile | ⬜ Pendente |
+### ~~Fase 7 (antiga): Portal de Notícias — Design (Google Stitch)~~ ❌ CANCELADA
+> **Motivo:** O workflow Google Stitch → Google Jules falhou. Jules não entregou o design completo, Gemini alucinhou tentando adaptar HTML incompleto, e o resultado acumulou código órfão e conflitos CSS. Abordagem abandonada em 2026-02-24. Design visual será feito via CSS puro (nova Fase 9).
 
-### Fase 8: Site da Escola — Funcionalidades e Design ⬜
+### Fase 7: Reorganização + Debug + Dashboard Funcional ✅
 | # | Tarefa | Status |
 |---|--------|--------|
-| 8.1 | (A definir após admin enhancement) | ⬜ Pendente |
+| 7A | Deletar arquivos temporários (design_reference, PROGRESS_SESSION.md) | ✅ Concluído |
+| 7B | Fix CRÍTICO: Dashboard — trocar `INDEX_DASHBOARD` por `DASHBOARD_CALLBACK`, reescrever View→callback, renomear template | ✅ Concluído |
+| 7C | Fix RSS feeds: `Article.objects` → `Article.on_site` em feeds.py | ✅ Concluído |
+| 7D | Fix admin action: renomear `mark_approved` → `mark_accepted` | ✅ Concluído |
+| 7E | Corrigir template dashboard: remover wrapper `<main>`, shadow inválido, `max-w-7xl` | ✅ Concluído |
+| 7F | Adicionar `help_text` PT-BR nos models para usuários não-técnicos | ✅ Concluído |
+| 7G | Traduzir fieldsets, actions, verbose_names e TextChoices para PT-BR em todos os models e admin.py | ✅ Concluído |
+| 7H | Atualizar arquivos .md (PLAN, CLAUDE, GEMINI) | ✅ Concluído |
+| 7I | Verificação final: `manage.py check` sem erros, migrations aplicadas | ✅ Concluído |
+
+### Fase 8: Consistência + Dashboard Funcional ✅
+> Dashboard completamente reescrita por Claude. Portal de notícias com bilinguismo consistente.
+
+| # | Tarefa | Status |
+|---|--------|--------|
+| 8.1 | Reescrever `admin/index.html`: single-line vars, language selector PT/EN, empty states | ✅ Concluído |
+| 8.2 | Corrigir 7 strings PT-only em `article_card`, `pagination`, `category_detail`, `tag_detail`, `author_detail` | ✅ Concluído |
+| 8.3 | `manage.py check` → 0 erros | ✅ Concluído |
+| 8.4 | **Debug e Correções do Portal de Notícias** (9 bugs corrigidos pelo Gemini) | ✅ Concluído |
+| 8.5 | Polir responsividade mobile (testar 375px, 768px) | ⬜ Pendente |
+| 8.6 | **Auditoria de Segurança Final** (2ª rodada — Claude) | ✅ Concluído |
+
+#### Sub-tarefas da Fase 8.6 — Segurança Final (detalhes no SECURITY_REPORT.md + plano Claude):
+| # | Tarefa | Severidade | Status |
+|---|--------|-----------|--------|
+| 8.6.A1 | Sitemap escola: Page.on_site (vazava páginas de todos os sites) | 🔴 CRÍTICO | ✅ |
+| 8.6.A2 | Comment max length [:5000] (DoS) | 🔴 CRÍTICO | ✅ |
+| 8.6.A3 | Remover último `\|safe` (password_reset_confirm.html) | 🔴 CRÍTICO | ✅ |
+| 8.6.A4 | PASSWORD_RESET_TIMEOUT = 3600 (era 24h default) | 🔴 CRÍTICO | ✅ |
+| 8.6.B1 | Mensagem genérica no registro (anti user-enumeration) | 🟡 ALTO | ✅ |
+| 8.6.B2 | Email unique=True no CustomUser (constraint no banco) | 🟡 ALTO | ✅ |
+| 8.6.B3 | Centralizar bleach + sanitizar Page.save() | 🟡 ALTO | ✅ |
+| 8.6.B4 | CSP header no nginx | 🟡 ALTO | ✅ |
+| 8.6.C1 | safe_referer_redirect usar get_current_site | 🟢 MÉDIO | ✅ |
+| 8.6.C2 | Hiring mensagem genérica para duplicata | 🟢 MÉDIO | ✅ |
+| 8.6.C3 | SESSION_SAVE_EVERY_REQUEST = True | 🟢 MÉDIO | ✅ |
+| 8.6.D1 | Deletar arquivo `nul` (artefato Windows) | 🔵 LIMPEZA | ✅ |
+| 8.6.D2 | nginx server_name: `example.com` → `_` (catch-all) | 🔵 LIMPEZA | ✅ |
+
+### Fase 9: Site da Escola — Construção Completa ⬜
+> O site da escola está **completamente inacabado**. Tem models e views básicas mas precisa de funcionalidades, templates e design completos.
+
+| # | Tarefa | Status |
+|---|--------|--------|
+| 9.1 | Auditar estado atual: listar o que funciona e o que falta | ⬜ Pendente |
+| 9.2 | Completar templates da escola (home, páginas, equipe, depoimentos) | ⬜ Pendente |
+| 9.3 | Integrar hiring (vagas) e contact (formulário) nos templates | ⬜ Pendente |
+| 9.4 | Aplicar design visual distinto (paleta diferente do news) | ⬜ Pendente |
+| 9.5 | Responsividade mobile | ⬜ Pendente |
+
+### Fase 10: Hardening para Produção ⬜ (parcial — segurança já coberta)
+| # | Tarefa | Status |
+|---|--------|--------|
+| 10.1 | Páginas de erro customizadas (404, 500) | ⬜ Pendente |
+| 10.2 | Monitoramento e logging | ⬜ Pendente |
+| 10.3 | Backup e recovery de dados | ⬜ Pendente |
+| 10.4 | Revisão de segurança (CSRF, XSS, headers) | ✅ Coberta pela Fase 8.6 |
 
 ---
 
@@ -129,10 +182,13 @@ Painel administrativo único (Django Unfold) para gerenciar ambos.
 4. **HTMX + Alpine.js** — SEO nativo, sem build pipeline JS
 5. **WhiteNoise** — serve statics sem Nginx em dev e shared hosting
 6. **Path-based routing** — escola em `/`, notícias em `/news/`
-7. **Funcionalidade antes do design** — toda a lógica do portal de notícias implementada primeiro, design visual do Stitch aplicado depois como camada separada
+7. **Funcionalidade antes do design** — toda a lógica implementada primeiro, design visual aplicado como camada separada
 8. **FBV (Function-Based Views)** — padrão consistente em todo o projeto, sem migrar para CBV
 9. **Busca com Django Q()** — sem biblioteca externa (Elasticsearch desnecessário para volume escolar)
 10. **`get_sidebar_context()` como utility** — evita queries desnecessárias em páginas que não precisam da sidebar
+11. **Dashboard via `DASHBOARD_CALLBACK`** — função callback que o Unfold chama para injetar dados no template `admin/index.html` (não usar View class)
+12. **Design CSS puro** — sem depender de ferramentas externas (Stitch/Jules). Tailwind via Unfold, sem CDN extra
+13. **GEMINI.md max 3KB** — instruções concisas, sem código inline, limpar após cada fase
 
 ---
 
@@ -152,10 +208,60 @@ Painel administrativo único (Django Unfold) para gerenciar ambos.
 
 ---
 
+## Lições Aprendidas
+
+| Data | Lição | Impacto |
+|------|-------|---------|
+| 2026-02-24 | Workflow Stitch → Jules falhou: IA externas não entregam código confiável para integração direta | Fase 7 antiga cancelada, design será CSS puro |
+| 2026-02-24 | `INDEX_DASHBOARD` nunca existiu no Unfold — Gemini alucionou a chave, Claude não verificou | Dashboard ficou órfã por dias. Sempre conferir docs oficiais |
+| 2026-02-24 | GEMINI.md cresceu para 106KB com instruções acumuladas → Gemini alucinou | Regra: max 3KB, limpar após cada fase, sem blocos de código |
+| 2026-02-24 | Dashboard usava Tailwind CDN sobre Tailwind compilado do Unfold → conflitos CSS | Nunca carregar CDN externo sobre framework que já compila Tailwind |
+
+---
+
+## Bugs Encontrados (Revisão Claude — Fase 7)
+
+| # | Bug | Severidade | Arquivo |
+|---|-----|-----------|---------|
+| 1 | `INDEX_DASHBOARD` não existe no Unfold — dashboard nunca renderizou | CRÍTICO | `config/settings/base.py:265` |
+| 2 | `AdminDashboardView` é View class mas Unfold espera callback function | CRÍTICO | `apps/common/dashboard.py` |
+| 3 | Template `dashboard.html` — Unfold procura `index.html` | CRÍTICO | `templates/admin/dashboard.html` |
+| 4 | Tailwind CDN conflita com Tailwind compilado do Unfold | ALTO | `templates/admin/dashboard.html:9-37` |
+| 5 | RSS feeds usam `Article.objects` em vez de `Article.on_site` | MÉDIO | `apps/news/feeds.py:17,55` |
+| 6 | `mark_approved` não bate com status `accepted` | BAIXO | `apps/hiring/admin.py` |
+| 7-9 | Fieldsets, actions em inglês; sem help_text para leigos | BAIXO | Todos admin.py / models |
+
+---
+
+## Bugs Encontrados (Auditoria Claude — Fase 8.4)
+
+| # | Bug | Severidade | Arquivo |
+|---|-----|-----------|---------|
+| 1 | Tailwind primary como flat string — `text-primary-600` etc não gera CSS | 🔴 CRÍTICO | `base_news.html` |
+| 2 | Article pode ter `status=published` mas `published_at=None` → desaparece | 🔴 CRÍTICO | `apps/news/models.py` |
+| 3 | Sitemap usa `Article.objects` → expõe artigos de todos os sites | 🔴 CRÍTICO | `apps/news/sitemaps.py` |
+| 4 | HTMX load-more aponta para `#articles-grid` inexistente | 🔴 CRÍTICO | `article_list.html` |
+| 5 | `is_liked` hardcoded False — like nunca reflete estado real | 🟡 MODERADO | `views.py` / template |
+| 6 | Page size HTMX (9) ≠ main view (12) | 🟡 MODERADO | `views.py` |
+| 7 | Container width inconsistente (1200/1280/7xl) entre páginas | 🟡 MODERADO | Vários templates |
+| 8 | Sidebar "trending" ordena por views mas mostra horário | 🟢 MENOR | `sidebar.html` |
+| 9 | Load-more HTMX inclui featured duplicado | 🟢 MENOR | `views.py` |
+
+---
+
 ## Estado Atual
 
-- **Fase:** 6 — Admin Enhancement (Painel Unificado Bilíngue)
-- **Tarefa ativa:** Fases 6A-6E no GEMINI.md
-- **Última atualização:** 2026-02-23
-- **Próximo passo:** Gemini executa Fases 6A-6E; depois Google Stitch para design do portal
-- **Bloqueios:** Nenhum
+- **Fase:** 8.6 concluída — Auditoria de Segurança Final
+- **Tarefa ativa:** Nenhuma — tudo implementado
+- **Próximo:** 8.5 (responsividade mobile) ou Fase 9 (site da escola)
+- **Bloqueios:** Nenhum. Pendente apenas `makemigrations` + `migrate` para email unique e Page manager
+- **Última atualização:** 2026-02-25
+
+### Resumo do estado por área:
+| Área | Estado | Nota |
+|------|--------|------|
+| **Portal de Notícias** | 🟢 Funcional + Seguro | Bugs corrigidos (8.4), segurança auditada 2x (Gemini + Claude) |
+| **Dashboard Admin** | 🟢 Funcional + Seguro | Export emails restrito, axes ativo, CSRF/session hardened |
+| **Site da Escola** | 🔴 Inacabado | Models/views básicas existem, templates e design incompletos (Fase 9) |
+| **Infraestrutura** | 🟢 Hardened | nginx com CSP/headers/rate-limit, Docker non-root, expose vs ports |
+| **Segurança** | 🟢 Auditada 2x | 20+ proteções ativas. Nenhum `\|safe` em templates. Bleach centralizado |

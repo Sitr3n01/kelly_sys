@@ -12,17 +12,17 @@ class PageAdmin(ModelAdmin):
     prepopulated_fields = {'slug': ('title',)}
     readonly_fields = ['created_at', 'updated_at']
     fieldsets = [
-        ('Content', {
+        ('Conteúdo', {
             'fields': ('title', 'slug', 'content', 'featured_image'),
         }),
-        ('Publication', {
+        ('Publicação', {
             'fields': ('site', 'is_published', 'order'),
         }),
         ('SEO', {
             'fields': ('meta_title', 'meta_description', 'meta_keywords'),
             'classes': ('collapse',),
         }),
-        ('Timestamps', {
+        ('Datas', {
             'fields': ('created_at', 'updated_at'),
             'classes': ('collapse',),
         }),
@@ -37,7 +37,7 @@ class TeamMemberAdmin(ModelAdmin):
     ordering = ['order', 'name']
     fieldsets = [
         (None, {'fields': ('name', 'title', 'photo', 'bio', 'email')}),
-        ('Display', {'fields': ('is_active', 'order')}),
+        ('Exibição', {'fields': ('is_active', 'order')}),
     ]
 
 
@@ -48,12 +48,12 @@ class TestimonialAdmin(ModelAdmin):
     search_fields = ['name', 'quote']
     actions = ['feature_selected', 'unfeature_selected']
 
-    @admin.action(description='Feature selected testimonials')
+    @admin.action(description='Destacar depoimentos selecionados')
     def feature_selected(self, request, queryset):
         updated = queryset.update(is_featured=True)
-        self.message_user(request, f'{updated} testimonial(s) featured.')
+        self.message_user(request, f'{updated} depoimento(s) destacado(s).')
 
-    @admin.action(description='Unfeature selected testimonials')
+    @admin.action(description='Remover destaque dos depoimentos')
     def unfeature_selected(self, request, queryset):
         updated = queryset.update(is_featured=False)
-        self.message_user(request, f'{updated} testimonial(s) unfeatured.')
+        self.message_user(request, f'{updated} destaque removido de depoimento(s).')

@@ -1,0 +1,202 @@
+{% extends "admin/base.html" %}
+{% load i18n %}
+{% block title %}{{ title }} | {{ site_title }}{% endblock %}
+{% block branding %}{% include "unfold/helpers/site_branding.html" %}{% endblock %}
+{% block content %}
+<style>
+.kb-dash{max-width:1280px;margin:0 auto;padding:1.5rem 0}
+.kb-dash *,.kb-dash *::before,.kb-dash *::after{box-sizing:border-box}
+.kb-welcome{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:flex-start;gap:1rem;margin-bottom:2rem}
+.kb-welcome h1{font-size:1.5rem;font-weight:700;margin:0;color:#f9fafb}
+.kb-welcome .kb-subtitle{font-size:.875rem;color:var(--font-muted-color,#9ca3af);margin-top:.25rem}
+.kb-role-badge{display:inline-block;padding:.125rem .625rem;border-radius:9999px;font-size:.6875rem;font-weight:600;background:rgba(99,102,241,.15);color:#a5b4fc;border:1px solid rgba(99,102,241,.25);margin-left:.75rem;vertical-align:middle}
+.kb-actions{display:flex;gap:.5rem;flex-wrap:wrap}
+.kb-actions a{display:inline-flex;align-items:center;gap:.375rem;padding:.5rem .875rem;border-radius:.5rem;font-size:.8125rem;font-weight:500;text-decoration:none;transition:all .15s ease}
+.kb-actions a{border:1px solid var(--border-color,#374151);color:var(--font-default-color,#d1d5db);background:var(--bg-color,#1f2937)}
+.kb-actions a:hover{border-color:#818cf8;color:#a5b4fc;box-shadow:0 1px 4px rgba(99,102,241,.12)}
+.kb-actions a .material-symbols-outlined{font-size:16px}
+.kb-actions .kb-primary-btn{background:#4f46e5;color:#fff !important;border-color:#4f46e5}
+.kb-actions .kb-primary-btn:hover{background:#4338ca;border-color:#4338ca;box-shadow:0 2px 8px rgba(79,70,229,.3)}
+.kb-portals{display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;margin-bottom:1.5rem}
+@media(max-width:900px){.kb-portals{grid-template-columns:1fr}}
+.kb-portal-header{display:flex;align-items:center;gap:.5rem;margin-bottom:.75rem}
+.kb-portal-header h2{font-size:.6875rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;margin:0;color:var(--font-muted-color,#9ca3af)}
+.kb-portal-header .material-symbols-outlined{font-size:18px}
+.kb-portal-header.kb-school .material-symbols-outlined{color:#60a5fa}
+.kb-portal-header.kb-news .material-symbols-outlined{color:#a5b4fc}
+.kb-stats-grid{display:grid;grid-template-columns:1fr 1fr;gap:.75rem}
+.kb-stats-grid.kb-single{grid-template-columns:1fr}
+.kb-stat-card{display:flex;align-items:center;justify-content:space-between;padding:1rem 1.125rem;border-radius:.5rem}
+.kb-stat-card{background:var(--bg-color,#1f2937);border:1px solid var(--border-color,#374151);text-decoration:none;transition:all .15s ease;overflow:hidden}
+.kb-stat-card:hover{border-color:rgba(129,140,248,.35);box-shadow:0 2px 8px rgba(0,0,0,.15)}
+.kb-stat-label{font-size:.75rem;font-weight:500;color:var(--font-muted-color,#9ca3af);margin-bottom:.25rem}
+.kb-stat-number{font-size:1.75rem;font-weight:700;color:#f9fafb;line-height:1}
+.kb-stat-number.kb-zero{color:#6b7280}
+.kb-stat-hint{font-size:.6875rem;font-weight:500;margin-top:.375rem}
+.kb-hint-positive{color:#34d399}.kb-hint-neutral{color:var(--font-muted-color,#9ca3af)}.kb-hint-attention{color:#f87171}
+.kb-stat-icon{width:2.25rem;height:2.25rem;border-radius:9999px;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all .15s ease}
+.kb-stat-icon .material-symbols-outlined{font-size:20px}
+.kb-stat-icon.kb-school-icon{background:rgba(96,165,250,.12);color:#60a5fa}
+.kb-stat-card:hover .kb-school-icon{background:#3b82f6;color:#fff}
+.kb-stat-icon.kb-news-icon{background:rgba(129,140,248,.12);color:#a5b4fc}
+.kb-stat-card:hover .kb-news-icon{background:#818cf8;color:#fff}
+.kb-stat-icon.kb-amber-icon{background:rgba(251,191,36,.12);color:#fbbf24}
+.kb-stat-card:hover .kb-amber-icon{background:#f59e0b;color:#fff}
+.kb-stat-icon.kb-rose-icon{background:rgba(251,113,133,.12);color:#fb7185}
+.kb-stat-card:hover .kb-rose-icon{background:#f43f5e;color:#fff}
+.kb-tables{display:grid;grid-template-columns:1fr 1fr;gap:1.5rem}
+@media(max-width:900px){.kb-tables{grid-template-columns:1fr}}
+.kb-table-card{background:var(--bg-color,#1f2937);border:1px solid var(--border-color,#374151);border-radius:.5rem;overflow:hidden}
+.kb-table-header{display:flex;justify-content:space-between;align-items:center;padding:.875rem 1.25rem}
+.kb-table-header{border-bottom:1px solid var(--border-color,#374151)}
+.kb-table-header h3{font-size:.875rem;font-weight:600;margin:0;color:#f9fafb}
+.kb-table-header a{font-size:.75rem;font-weight:500;color:#a5b4fc;text-decoration:none}
+.kb-table-header a:hover{text-decoration:underline}
+.kb-table{width:100%;border-collapse:collapse;font-size:.8125rem;color:#d1d5db}
+.kb-table thead{background:rgba(31,41,55,.5);border-bottom:1px solid var(--border-color,#374151)}
+.kb-table th{padding:.625rem 1.25rem;text-align:left;font-size:.75rem;font-weight:600;color:var(--font-muted-color,#9ca3af)}
+.kb-table td{padding:.625rem 1.25rem;border-bottom:1px solid rgba(55,65,81,.5)}
+.kb-table tr:last-child td{border-bottom:none}
+.kb-table tr:hover{background:rgba(255,255,255,.02)}
+.kb-table a{color:#f9fafb;text-decoration:none;font-weight:500;transition:color .15s}
+.kb-table a:hover{color:#a5b4fc}
+.kb-table .kb-text-right{text-align:right}
+.kb-badge{display:inline-flex;align-items:center;gap:.25rem;padding:.125rem .5rem;border-radius:9999px;font-size:.6875rem;font-weight:500}
+.kb-badge-dot{width:.375rem;height:.375rem;border-radius:9999px;display:inline-block}
+.kb-badge-green{background:rgba(52,211,153,.12);color:#34d399}.kb-badge-green .kb-badge-dot{background:#34d399}
+.kb-badge-amber{background:rgba(251,191,36,.12);color:#fbbf24}.kb-badge-amber .kb-badge-dot{background:#fbbf24}
+.kb-badge-gray{background:rgba(156,163,175,.1);color:#9ca3af}.kb-badge-gray .kb-badge-dot{background:#9ca3af}
+.kb-avatar{width:1.75rem;height:1.75rem;border-radius:9999px;display:flex;align-items:center;justify-content:center}
+.kb-avatar{font-size:.6875rem;font-weight:700;text-transform:uppercase;flex-shrink:0;background:#374151;color:#9ca3af}
+.kb-applicant{display:flex;align-items:center;gap:.625rem}
+.kb-applicant-name{font-weight:500;color:#f9fafb;line-height:1.25}
+.kb-applicant-email{font-size:.6875rem;color:var(--font-muted-color,#9ca3af);line-height:1.25}
+.kb-empty-state{text-align:center;padding:1.5rem;color:var(--font-muted-color,#9ca3af)}
+.kb-empty-state .material-symbols-outlined{font-size:2rem;display:block;margin-bottom:.25rem;opacity:.3}
+.kb-view-icon{color:var(--font-muted-color,#9ca3af);transition:color .15s}
+.kb-view-icon:hover{color:#a5b4fc}
+.kb-muted{color:var(--font-muted-color,#9ca3af)}
+.kb-truncate{max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+</style>
+<div class="kb-dash">
+<div class="kb-welcome">
+<div>
+<h1>Bem-vindo, {{ request.user.first_name|default:request.user.username }}
+{% if request.user.is_superuser %} <span class="kb-role-badge">Superusuário</span>
+{% elif request.user.is_staff %} <span class="kb-role-badge">Staff</span>
+{% endif %}</h1>
+<p class="kb-subtitle">Aqui está o que está acontecendo nos seus portais hoje.</p>
+</div>
+<div class="kb-actions">
+<a href="{% url 'admin:contact_contactinquiry_changelist' %}?status=new"><span class="material-symbols-outlined">mail</span> Mensagens</a>
+<a href="{% url 'admin:hiring_application_changelist' %}"><span class="material-symbols-outlined">description</span> Candidaturas</a>
+<a href="{% url 'admin:news_article_add' %}" class="kb-primary-btn"><span class="material-symbols-outlined">edit_square</span> Novo Artigo</a>
+</div>
+</div>
+<div class="kb-portals">
+<div>
+<div class="kb-portal-header kb-school"><span class="material-symbols-outlined">school</span><h2>Portal Escolar</h2></div>
+<div class="kb-stats-grid">
+<a href="{% url 'admin:hiring_jobposting_changelist' %}?status=open" class="kb-stat-card">
+<div><p class="kb-stat-label">Vagas Abertas</p>
+<p class="kb-stat-number {% if not open_jobs %}kb-zero{% endif %}">{{ open_jobs }}</p></div>
+<div class="kb-stat-icon kb-school-icon"><span class="material-symbols-outlined">work</span></div></a>
+<a href="{% url 'admin:hiring_application_changelist' %}?status=received" class="kb-stat-card">
+<div><p class="kb-stat-label">Novas Candidaturas</p>
+<p class="kb-stat-number {% if not pending_applications %}kb-zero{% endif %}">{{ pending_applications }}</p></div>
+<div class="kb-stat-icon kb-school-icon"><span class="material-symbols-outlined">person_add</span></div></a>
+</div>
+<div class="kb-stats-grid kb-single" style="margin-top:0.75rem">
+<a href="{% url 'admin:contact_contactinquiry_changelist' %}?status=new" class="kb-stat-card">
+<div><p class="kb-stat-label">Mensagens Não Lidas</p>
+<p class="kb-stat-number {% if not unread_messages %}kb-zero{% endif %}">{{ unread_messages }}</p>
+{% if unread_messages %}<p class="kb-stat-hint kb-hint-attention">Requer atenção</p>
+{% else %}<p class="kb-stat-hint kb-hint-neutral">Tudo em dia</p>{% endif %}</div>
+<div class="kb-stat-icon kb-school-icon"><span class="material-symbols-outlined">mail</span></div></a>
+</div>
+</div>
+<div>
+<div class="kb-portal-header kb-news"><span class="material-symbols-outlined">newspaper</span><h2>Portal de Notícias</h2></div>
+<div class="kb-stats-grid">
+<a href="{% url 'admin:news_article_changelist' %}?status=published" class="kb-stat-card">
+<div><p class="kb-stat-label">Artigos Publicados</p>
+<p class="kb-stat-number {% if not published_articles %}kb-zero{% endif %}">{{ published_articles }}</p>
+<p class="kb-stat-hint kb-hint-positive">+{{ articles_this_month }} este mês</p></div>
+<div class="kb-stat-icon kb-news-icon"><span class="material-symbols-outlined">check_circle</span></div></a>
+<a href="{% url 'admin:news_article_changelist' %}?status=draft" class="kb-stat-card">
+<div><p class="kb-stat-label">Rascunhos</p>
+<p class="kb-stat-number {% if not draft_articles %}kb-zero{% endif %}">{{ draft_articles }}</p>
+<p class="kb-stat-hint kb-hint-neutral">
+{% if last_draft_updated %}Editado {{ last_draft_updated|timesince }} atrás
+{% else %}Sem rascunhos{% endif %}</p></div>
+<div class="kb-stat-icon kb-amber-icon"><span class="material-symbols-outlined">edit_note</span></div></a>
+<a href="{% url 'admin:news_newslettersubscription_changelist' %}?is_active=True" class="kb-stat-card">
+<div><p class="kb-stat-label">Assinantes Newsletter</p>
+<p class="kb-stat-number {% if not newsletter_subscribers %}kb-zero{% endif %}">{{ newsletter_subscribers }}</p>
+<p class="kb-stat-hint kb-hint-positive">+{{ newsletter_today }} hoje</p></div>
+<div class="kb-stat-icon kb-news-icon"><span class="material-symbols-outlined">group</span></div></a>
+<a href="{% url 'admin:news_comment_changelist' %}" class="kb-stat-card">
+<div><p class="kb-stat-label">Comentários</p>
+<p class="kb-stat-number {% if pending_comments %}kb-hint-attention{% else %}kb-zero{% endif %}">{{ pending_comments }}</p>
+{% if pending_comments %}<p class="kb-stat-hint kb-hint-attention">Requer moderação</p>{% endif %}</div>
+<div class="kb-stat-icon kb-rose-icon"><span class="material-symbols-outlined">rate_review</span></div></a>
+</div>
+</div>
+</div>
+<div class="kb-tables">
+<div class="kb-table-card">
+<div class="kb-table-header">
+<h3>Últimas Candidaturas</h3>
+<a href="{% url 'admin:hiring_application_changelist' %}">Ver todas</a></div>
+<table class="kb-table">
+<thead><tr><th>Candidato</th><th>Vaga</th><th class="kb-text-right">Ação</th></tr></thead>
+<tbody>
+{% for app in recent_applications %}
+<tr>
+<td><div class="kb-applicant">
+<div class="kb-avatar">{{ app.first_name|first }}{{ app.last_name|first }}</div>
+<div><div class="kb-applicant-name">{{ app.first_name }} {{ app.last_name }}</div>
+<div class="kb-applicant-email">{{ app.email }}</div></div></div></td>
+<td class="kb-truncate">{{ app.job.title }}</td>
+<td class="kb-text-right">
+<a href="{% url 'admin:hiring_application_change' app.pk %}" class="kb-view-icon">
+<span class="material-symbols-outlined" style="font-size:18px">visibility</span></a></td>
+</tr>
+{% empty %}
+<tr><td colspan="3" class="kb-empty-state">
+<span class="material-symbols-outlined">person_search</span> Nenhuma candidatura ainda</td></tr>
+{% endfor %}
+</tbody>
+</table>
+</div>
+<div class="kb-table-card">
+<div class="kb-table-header">
+<h3>Últimos Artigos</h3>
+<a href="{% url 'admin:news_article_changelist' %}">Ver todos</a></div>
+<table class="kb-table">
+<thead><tr><th>Título</th><th>Status</th><th class="kb-text-right">Data</th></tr></thead>
+<tbody>
+{% for article in recent_articles %}
+<tr>
+<td class="kb-truncate"><a href="{% url 'admin:news_article_change' article.pk %}">{{ article.title }}</a></td>
+<td>
+{% if article.status == 'published' %}
+<span class="kb-badge kb-badge-green"><span class="kb-badge-dot"></span> {{ article.get_status_display }}</span>
+{% elif article.status == 'draft' %}
+<span class="kb-badge kb-badge-amber"><span class="kb-badge-dot"></span> {{ article.get_status_display }}</span>
+{% else %}
+<span class="kb-badge kb-badge-gray"><span class="kb-badge-dot"></span> {{ article.get_status_display }}</span>
+{% endif %}
+</td>
+<td class="kb-text-right kb-muted">{{ article.published_at|default:article.updated_at|date:"d M" }}</td>
+</tr>
+{% empty %}
+<tr><td colspan="3" class="kb-empty-state">
+<span class="material-symbols-outlined">article</span> Nenhum artigo ainda</td></tr>
+{% endfor %}
+</tbody>
+</table>
+</div>
+</div>
+</div>
+{% endblock %}

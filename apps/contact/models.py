@@ -5,16 +5,16 @@ from apps.common.models import TimeStampedModel
 
 class ContactInquiry(TimeStampedModel):
     class Status(models.TextChoices):
-        NEW = 'new', 'New'
-        READ = 'read', 'Read'
-        REPLIED = 'replied', 'Replied'
-        ARCHIVED = 'archived', 'Archived'
+        NEW = 'new', 'Nova'
+        READ = 'read', 'Lida'
+        REPLIED = 'replied', 'Respondida'
+        ARCHIVED = 'archived', 'Arquivada'
 
     class Subject(models.TextChoices):
-        GENERAL = 'general', 'General'
-        ADMISSIONS = 'admissions', 'Admissions'
-        SUPPORT = 'support', 'Support'
-        OTHER = 'other', 'Other'
+        GENERAL = 'general', 'Geral'
+        ADMISSIONS = 'admissions', 'Admissões'
+        SUPPORT = 'support', 'Suporte'
+        OTHER = 'other', 'Outro'
 
     site = models.ForeignKey(Site, on_delete=models.CASCADE, related_name='inquiries')
     name = models.CharField(max_length=200)
@@ -22,12 +22,12 @@ class ContactInquiry(TimeStampedModel):
     phone = models.CharField(max_length=30, blank=True)
     subject = models.CharField(max_length=50, choices=Subject.choices, default=Subject.GENERAL)
     message = models.TextField()
-    status = models.CharField(max_length=20, choices=Status.choices, default=Status.NEW)
+    status = models.CharField(max_length=20, choices=Status.choices, default=Status.NEW, help_text='Marque como Lida, Respondida ou Arquivada conforme o atendimento.')
 
     class Meta:
         ordering = ['-created_at']
-        verbose_name = 'Contact Inquiry'
-        verbose_name_plural = 'Contact Inquiries'
+        verbose_name = 'Mensagem de Contato'
+        verbose_name_plural = 'Mensagens de Contato'
 
     def __str__(self):
         return f'{self.name} - {self.subject}'

@@ -1,0 +1,27 @@
+<div class="p-6 bg-slate-50 dark:bg-slate-900 rounded-lg border border-slate-100 dark:border-slate-800"
+    id="sidebar-newsletter">
+    <div class="flex flex-col items-center text-center gap-4 py-2">
+        <div class="text-green-500">
+            <span class="material-symbols-outlined text-[40px]">mark_email_read</span>
+        </div>
+        <div>
+            <h5 class="text-lg font-bold text-slate-900 dark:text-white mb-1 font-display"
+                x-text="t('Inscrição confirmada!', 'Subscription confirmed!')">Inscrição confirmada!</h5>
+            <p class="text-sm text-slate-500 font-ui leading-relaxed"
+                x-text="t('Crie uma conta para salvar artigos, comentar e personalizar sua experiência.', 'Create an account to save articles, comment, and personalize your experience.')">
+                Crie uma conta para salvar artigos, comentar e personalizar sua experiência.
+            </p>
+        </div>
+        <div class="flex flex-col gap-2 w-full mt-1">
+            <a href="{% url 'accounts:register' %}?email={{ email|urlencode }}"
+                class="font-ui w-full py-2 bg-primary text-white text-sm font-bold rounded hover:bg-primary/90 transition-colors text-center">
+                <span x-text="t('Criar conta com esse e-mail', 'Create account with this email')">Criar conta com esse
+                    e-mail</span>
+            </a>
+            <a href="{% url 'accounts:login' %}"
+                class="font-ui w-full py-2 bg-transparent border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-300 text-sm font-bold rounded hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors text-center">
+                <span x-text="t('Já tenho uma conta', 'I already have an account')">Já tenho uma conta</span>
+            </a>
+        </div>
+    </div>
+</div>

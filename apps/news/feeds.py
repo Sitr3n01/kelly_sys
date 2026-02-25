@@ -14,7 +14,7 @@ class LatestArticlesFeed(Feed):
 
     def items(self):
         return (
-            Article.objects
+            Article.on_site
             .filter(status=Article.Status.PUBLISHED)
             .select_related('category', 'author')
             .order_by('-published_at')[:20]
@@ -52,7 +52,7 @@ class CategoryFeed(Feed):
 
     def items(self, obj):
         return (
-            Article.objects
+            Article.on_site
             .filter(category=obj, status=Article.Status.PUBLISHED)
             .select_related('author')
             .order_by('-published_at')[:20]

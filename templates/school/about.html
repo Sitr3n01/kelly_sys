@@ -1,0 +1,36 @@
+{% extends 'base_news.html' %}
+
+{% block title %}Nossa Instituição - {{ current_site.name }}{% endblock %}
+
+{% block content %}
+<main class="pt-20 lg:pt-28 pb-16 lg:pb-24">
+    <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+        <header class="text-center mb-16">
+            <h1 class="text-4xl md:text-5xl font-display font-bold text-slate-900 dark:text-white mb-6"
+                x-text="t('Nossa Instituição', 'Our Institution')">
+                Nossa Instituição
+            </h1>
+            <p class="text-lg text-slate-600 dark:text-slate-400 font-ui max-w-2xl mx-auto"
+                x-text="t('Conheça nossa missão, nossa equipe e como entrar em contato conosco.', 'Learn about our mission, our team, and how to get in touch with us.')">
+                Conheça nossa missão, nossa equipe e como entrar em contato conosco.
+            </p>
+        </header>
+
+        <article class="prose prose-lg prose-slate dark:prose-invert mx-auto font-ui mb-20">
+            <h2 x-text="t('Quem Somos', 'Who We Are')">Quem Somos</h2>
+            <p
+                x-text="t('Fundada com o ideal de promover a liberdade de pensamento e o ensino crítico, nossa instituição dedica-se a cultivar uma nova geração de profissionais de comunicação, pensadores e analistas comprometidos com a verdade.', 'Founded with the ideal of promoting freedom of thought and critical learning, our institution is dedicated to cultivating a new generation of communication professionals, thinkers, and analysts committed to the truth.')">
+                Fundada com o ideal de promover a liberdade de pensamento e o ensino crítico, nossa instituição
+                dedica-se a cultivar uma nova geração de profissionais de comunicação, pensadores e analistas
+                comprometidos com a verdade.
+            </p>
+            <p
+                x-text="t('Além do campus educacional, operamos este portal de notícias onde intelectuais, alunos e professores contribuem em discussões profundas sobre as pautas contemporâneas.', 'Beyond the educational campus, we operate this news portal where intellectuals, students, and professors contribute to deep discussions on contemporary issues.')">
+                Além do campus educacional, operamos este portal de notícias onde intelectuais, alunos e professores
+                contribuem em discussões profundas sobre as pautas contemporâneas.
+            </p>
+        </article>
+
+    </div>
+</main>
+{% endblock %}

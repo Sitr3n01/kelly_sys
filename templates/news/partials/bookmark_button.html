@@ -4,7 +4,10 @@
     hx-post="{% url 'news:toggle_bookmark' article.id %}" hx-swap="outerHTML"
     class="group flex h-8 w-8 items-center justify-center rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
     <span
-        class="material-symbols-outlined text-[20px] {% if is_bookmarked %}text-primary{% else %}text-slate-400 group-hover:text-primary{% endif %} transition-colors">bookmark</span>
+        class="material-symbols-outlined text-[20px] {% if is_bookmarked %}text-primary{% else %}text-slate-400 group-hover:text-primary{% endif %} transition-all"
+        {% if is_bookmarked %}style="font-variation-settings: 'FILL' 1;" {% endif %}>
+        {% if is_bookmarked %}bookmark_added{% else %}bookmark{% endif %}
+    </span>
 </button>
 {% else %}
 <a href="{% url 'accounts:login' %}?next={{ request.path }}" :aria-label="t('Fazer login para Salvar', 'Login to Save')"

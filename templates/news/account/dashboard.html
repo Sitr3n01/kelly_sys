@@ -3,7 +3,29 @@
 {% block title %}Minha Conta - The Chronicle{% endblock %}
 
 {% block content %}
-<div class="max-w-[1200px] mx-auto px-6 xl:px-0 py-16 md:py-20 font-display">
+<div class="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 xl:px-0 py-16 md:py-20 font-display">
+
+    <!-- Flash Messages -->
+    {% if messages %}
+    <div class="mb-8 space-y-3">
+        {% for message in messages %}
+        <div class="flex items-center gap-3 px-5 py-4 rounded-xl font-ui text-sm border
+            {% if message.tags == 'success' %}bg-emerald-50 dark:bg-emerald-900/20 text-emerald-800 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800
+            {% elif message.tags == 'error' %}bg-red-50 dark:bg-red-900/20 text-red-800 dark:text-red-300 border-red-200 dark:border-red-800
+            {% else %}bg-blue-50 dark:bg-blue-900/20 text-blue-800 dark:text-blue-300 border-blue-200 dark:border-blue-800{% endif %}"
+            x-data="{ show: true }" x-show="show" x-transition>
+            <span class="material-symbols-outlined text-[20px]">
+                {% if message.tags == 'success' %}check_circle{% elif message.tags == 'error' %}error{% else %}info{% endif %}
+            </span>
+            <span class="flex-grow">{{ message }}</span>
+            <button @click="show = false" class="opacity-60 hover:opacity-100 transition-opacity">
+                <span class="material-symbols-outlined text-[18px]">close</span>
+            </button>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
     <div class="flex items-center gap-4 mb-12">
         <h1 class="text-4xl md:text-5xl font-bold tracking-tight text-slate-900 dark:text-white"
             x-text="t('Minha Conta', 'My Account')">Minha Conta</h1>
@@ -32,6 +54,12 @@
                 class="flex items-center gap-3 px-4 py-3 rounded-lg font-ui font-semibold text-sm transition-colors {% if request.GET.tab == 'likes' %}bg-primary/10 text-primary dark:bg-primary/20 dark:text-primary-300{% else %}text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/50 hover:text-slate-900 dark:hover:text-white{% endif %}">
                 <span class="material-symbols-outlined text-[20px]">thumb_up</span>
                 <span x-text="t('Artigos Curtidos', 'Liked Articles')">Artigos Curtidos</span>
+            </a>
+
+            <a href="?tab=settings"
+                class="flex items-center gap-3 px-4 py-3 rounded-lg font-ui font-semibold text-sm transition-colors {% if request.GET.tab == 'settings' %}bg-primary/10 text-primary dark:bg-primary/20 dark:text-primary-300{% else %}text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/50 hover:text-slate-900 dark:hover:text-white{% endif %}">
+                <span class="material-symbols-outlined text-[20px]">settings</span>
+                <span x-text="t('Configurações', 'Settings')">Configurações</span>
             </a>
 
             <div class="h-px w-full bg-slate-200 dark:bg-slate-800 my-4"></div>
@@ -75,15 +103,14 @@
                                     <h3
                                         class="text-lg font-bold text-slate-900 dark:text-white group-hover:text-primary transition-colors leading-tight mb-2">
                                         {{ article.title }}</h3>
-                                    <p class="text-sm text-slate-500 font-ui line-clamp-2">{{
-                                        article.excerpt|default:article.content|striptags }}</p>
+                                    <p class="text-sm text-slate-500 font-ui line-clamp-2">{{ article.excerpt|default:article.content|striptags }}</p>
                                 </a>
 
                                 <!-- Remove Bookmark Button -->
                                 <button
                                     class="flex-shrink-0 w-8 h-8 flex items-center justify-center rounded-full text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-red-500 transition-colors"
-                                    hx-post="{% url 'news:toggle_bookmark' article.id %}?source=dashboard" hx-swap="outerHTML"
-                                    hx-target="closest .group" :aria-label="t('Remover', 'Remove')">
+                                    hx-post="{% url 'news:toggle_bookmark' article.id %}?source=dashboard"
+                                    hx-swap="outerHTML" hx-target="closest .group" :aria-label="t('Remover', 'Remove')">
                                     <span class="material-symbols-outlined text-[20px]">bookmark_remove</span>
                                 </button>
                             </div>
@@ -188,8 +215,7 @@
                         </div>
                         <div>
                             {% if article.category %}
-                            <span class="text-xs font-bold font-ui text-primary uppercase tracking-wider mb-2 block">{{
-                                article.category.name }}</span>
+                            <span class="text-xs font-bold font-ui text-primary uppercase tracking-wider mb-2 block">{{ article.category.name }}</span>
                             {% endif %}
                             <h3
                                 class="text-base font-bold text-slate-900 dark:text-white group-hover:text-primary transition-colors leading-snug">
@@ -210,6 +236,170 @@
                         Apoie nossos autores e curta matérias.</p>
                 </div>
                 {% endif %}
+            </div>
+
+            {% elif request.GET.tab == 'settings' %}
+            <!-- Settings Tab -->
+            <div class="space-y-10">
+                <h2 class="text-2xl font-bold text-slate-900 dark:text-white" x-text="t('Configurações', 'Settings')">
+                    Configurações</h2>
+
+                <!-- Account Info -->
+                <div class="p-6 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
+                    <h3 class="text-lg font-bold text-slate-900 dark:text-white mb-4 flex items-center gap-2">
+                        <span class="material-symbols-outlined text-[20px] text-slate-400">person</span>
+                        <span x-text="t('Informações da Conta', 'Account Info')">Informações da Conta</span>
+                    </h3>
+                    <div class="space-y-3 font-ui text-sm">
+                        <div class="flex items-center gap-3 text-slate-600 dark:text-slate-400">
+                            <span class="font-semibold text-slate-900 dark:text-white w-24"
+                                x-text="t('Usuário:', 'Username:')">Usuário:</span>
+                            <span>{{ request.user.username }}</span>
+                        </div>
+                        {% if request.user.email %}
+                        <div class="flex items-center gap-3 text-slate-600 dark:text-slate-400">
+                            <span class="font-semibold text-slate-900 dark:text-white w-24">E-mail:</span>
+                            <span>{{ request.user.email }}</span>
+                        </div>
+                        {% endif %}
+                        {% if request.user.get_full_name %}
+                        <div class="flex items-center gap-3 text-slate-600 dark:text-slate-400">
+                            <span class="font-semibold text-slate-900 dark:text-white w-24"
+                                x-text="t('Nome:', 'Name:')">Nome:</span>
+                            <span>{{ request.user.get_full_name }}</span>
+                        </div>
+                        {% endif %}
+                        <div class="flex items-center gap-3 text-slate-600 dark:text-slate-400">
+                            <span class="font-semibold text-slate-900 dark:text-white w-24"
+                                x-text="t('Membro desde:', 'Member since:')">Membro desde:</span>
+                            <span>{{ request.user.date_joined|date:"d M, Y" }}</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Newsletter Subscription -->
+                <div class="p-6 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
+                    <h3 class="text-lg font-bold text-slate-900 dark:text-white mb-4 flex items-center gap-2">
+                        <span class="material-symbols-outlined text-[20px] text-slate-400">mail</span>
+                        <span x-text="t('Newsletter', 'Newsletter')">Newsletter</span>
+                    </h3>
+
+                    {% if has_newsletter %}
+                    <div class="flex flex-col sm:flex-row sm:items-center gap-4">
+                        <div class="flex-grow">
+                            <div class="flex items-center gap-2 mb-2">
+                                <span
+                                    class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400">
+                                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                                    <span x-text="t('Ativa', 'Active')">Ativa</span>
+                                </span>
+                            </div>
+                            <p class="text-sm text-slate-600 dark:text-slate-400 font-ui"
+                                x-text="t('Você recebe nossas novidades por e-mail. Quando publicarmos novos artigos, você será notificado.', 'You receive our news by email. When we publish new articles, you will be notified.')">
+                                Você recebe nossas novidades por e-mail.</p>
+                        </div>
+                        <form action="{% url 'accounts:toggle_newsletter' %}" method="post" class="flex-shrink-0">
+                            {% csrf_token %}
+                            <input type="hidden" name="action" value="unsubscribe">
+                            <button type="submit"
+                                onclick="return confirm('Tem certeza que deseja cancelar sua inscrição na newsletter?')"
+                                class="px-4 py-2 rounded-lg font-ui font-semibold text-sm border border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 hover:border-red-300 dark:hover:border-red-700 hover:text-red-600 dark:hover:text-red-400 transition-all">
+                                <span x-text="t('Cancelar inscrição', 'Unsubscribe')">Cancelar inscrição</span>
+                            </button>
+                        </form>
+                    </div>
+                    {% else %}
+                    <div class="flex flex-col sm:flex-row sm:items-center gap-4">
+                        <div class="flex-grow">
+                            <div class="flex items-center gap-2 mb-2">
+                                <span
+                                    class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400">
+                                    <span class="w-1.5 h-1.5 rounded-full bg-slate-400"></span>
+                                    <span x-text="t('Inativa', 'Inactive')">Inativa</span>
+                                </span>
+                            </div>
+                            <p class="text-sm text-slate-500 dark:text-slate-400 font-ui"
+                                x-text="t('Ative para receber nossas novidades e artigos diretamente no seu e-mail.', 'Activate to receive our news and articles directly in your email.')">
+                                Ative para receber nossas novidades por e-mail.</p>
+                        </div>
+                        <form action="{% url 'accounts:toggle_newsletter' %}" method="post" class="flex-shrink-0">
+                            {% csrf_token %}
+                            <input type="hidden" name="action" value="subscribe">
+                            <button type="submit"
+                                class="px-4 py-2 rounded-lg font-ui font-semibold text-sm bg-primary text-white hover:bg-primary-600 transition-all flex items-center gap-2">
+                                <span class="material-symbols-outlined text-[16px]">notifications_active</span>
+                                <span x-text="t('Ativar newsletter', 'Activate newsletter')">Ativar newsletter</span>
+                            </button>
+                        </form>
+                    </div>
+                    {% endif %}
+                </div>
+
+                <!-- Danger Zone: Delete Account -->
+                <div class="p-6 rounded-2xl border-2 border-red-200 dark:border-red-900/50 bg-red-50/50 dark:bg-red-900/10"
+                    x-data="{ showDeleteModal: false }">
+                    <h3 class="text-lg font-bold text-red-700 dark:text-red-400 mb-2 flex items-center gap-2">
+                        <span class="material-symbols-outlined text-[20px]">warning</span>
+                        <span x-text="t('Zona de Perigo', 'Danger Zone')">Zona de Perigo</span>
+                    </h3>
+                    <p class="text-sm text-red-600/80 dark:text-red-400/80 font-ui mb-5"
+                        x-text="t('A exclusão da conta é permanente. Todos os seus dados, comentários, likes e bookmarks serão removidos definitivamente.', 'Account deletion is permanent. All your data, comments, likes, and bookmarks will be permanently removed.')">
+                        A exclusão da conta é permanente. Todos os seus dados, comentários, likes e bookmarks serão
+                        removidos definitivamente.
+                    </p>
+                    <button @click="showDeleteModal = true"
+                        class="px-5 py-2.5 rounded-lg font-ui font-bold text-sm bg-red-600 text-white hover:bg-red-700 transition-colors flex items-center gap-2">
+                        <span class="material-symbols-outlined text-[18px]">delete_forever</span>
+                        <span x-text="t('Excluir minha conta', 'Delete my account')">Excluir minha conta</span>
+                    </button>
+
+                    <!-- Delete Confirmation Modal -->
+                    <div x-show="showDeleteModal" x-transition.opacity x-cloak
+                        class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4"
+                        @keydown.escape.window="showDeleteModal = false">
+                        <div @click.outside="showDeleteModal = false"
+                            class="w-full max-w-md bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-700 p-8"
+                            x-transition>
+                            <div class="text-center mb-6">
+                                <div
+                                    class="w-16 h-16 bg-red-100 dark:bg-red-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
+                                    <span
+                                        class="material-symbols-outlined text-[32px] text-red-600 dark:text-red-400">person_remove</span>
+                                </div>
+                                <h3 class="text-xl font-bold text-slate-900 dark:text-white mb-2"
+                                    x-text="t('Excluir Conta', 'Delete Account')">Excluir Conta</h3>
+                                <p class="text-sm text-slate-500 dark:text-slate-400 font-ui"
+                                    x-text="t('Para confirmar, digite sua senha abaixo. Esta ação não pode ser desfeita.', 'To confirm, type your password below. This action cannot be undone.')">
+                                    Para confirmar, digite sua senha abaixo. Esta ação não pode ser desfeita.</p>
+                            </div>
+
+                            <form action="{% url 'accounts:delete_account' %}" method="post">
+                                {% csrf_token %}
+                                <div class="mb-6">
+                                    <label for="delete-password"
+                                        class="block text-sm font-semibold text-slate-700 dark:text-slate-300 font-ui mb-2"
+                                        x-text="t('Sua senha:', 'Your password:')">Sua senha:</label>
+                                    <input type="password" name="password" id="delete-password" required
+                                        autocomplete="current-password"
+                                        class="w-full rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 px-4 py-3 text-sm text-slate-900 dark:text-white font-ui outline-none focus:border-red-500 focus:ring-1 focus:ring-red-500 transition-all"
+                                        x-bind:placeholder="t('Digite sua senha para confirmar', 'Enter your password to confirm')"
+                                        placeholder="Digite sua senha para confirmar">
+                                </div>
+                                <div class="flex gap-3">
+                                    <button type="button" @click="showDeleteModal = false"
+                                        class="flex-1 px-4 py-3 rounded-lg font-ui font-semibold text-sm border border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">
+                                        <span x-text="t('Cancelar', 'Cancel')">Cancelar</span>
+                                    </button>
+                                    <button type="submit"
+                                        class="flex-1 px-4 py-3 rounded-lg font-ui font-bold text-sm bg-red-600 text-white hover:bg-red-700 transition-colors">
+                                        <span x-text="t('Sim, excluir conta', 'Yes, delete account')">Sim, excluir
+                                            conta</span>
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
             </div>
             {% endif %}
         </div>

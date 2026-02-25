@@ -13,3 +13,7 @@ COPY requirements/ requirements/
 RUN pip install --no-cache-dir -r requirements/development.txt
 
 COPY . .
+
+# Non-root user for security
+RUN useradd -m -u 1000 appuser && chown -R appuser:appuser /app
+USER appuser

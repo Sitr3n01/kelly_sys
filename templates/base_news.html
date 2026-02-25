@@ -1,14 +1,16 @@
-<html x-data="{ 
-    theme: localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'),
-    lang: localStorage.getItem('lang') || 'pt'
-}" x-init="
-    $watch('theme', val => localStorage.setItem('theme', val));
-    $watch('lang', val => localStorage.setItem('lang', val));
-" :class="theme === 'dark' ? 'dark' : ''" :lang="lang" class="scroll-smooth">
+<html class="scroll-smooth">
 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script>
+        // Prevents Flash Of Unstyled Content (FOUC) on theme change
+        if (localStorage.getItem('theme') === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+            document.documentElement.classList.add('dark');
+        } else if (localStorage.getItem('theme') === 'light') {
+            document.documentElement.classList.remove('dark');
+        }
+    </script>
 
     <title>{% block title %}{{ site_settings.tagline|default:current_site.name }}{% endblock %}</title>
 
@@ -59,7 +61,19 @@
             theme: {
                 extend: {
                     colors: {
-                        "primary": "#1152d4",
+                        "primary": {
+                            50: "#eef2ff",
+                            100: "#dce5ff",
+                            200: "#b9ccfe",
+                            300: "#8baafe",
+                            400: "#5882fd",
+                            500: "#1152d4",
+                            600: "#1152d4",
+                            700: "#163ca8",
+                            800: "#112e82",
+                            900: "#082868",
+                            DEFAULT: "#1152d4"
+                        },
                         "background-light": "#ffffff",
                         "background-dark": "#101622",
                         "slate-900": "#1a1a1a",
@@ -142,18 +156,22 @@
     class="bg-background-light dark:bg-background-dark text-slate-900 dark:text-slate-100 min-h-screen flex flex-col antialiased"
     hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'>
 
-    <!-- System-wide translation dictionary via Alpine (optional, for simple translations) -->
-    <script>
-        document.addEventListener('alpine:init', () => {
-            Alpine.data('i18n', () => ({
-                t(pt, en) {
-                    return this.lang === 'en' ? en : pt;
-                }
-            }));
+    <div x-data="{
+        theme: localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'),
+        lang: localStorage.getItem('lang') || 'pt',
+        t(pt, en) { return this.lang === 'en' ? en : pt; }
+    }" x-init="
+        document.documentElement.classList.toggle('dark', theme === 'dark');
+        document.documentElement.lang = lang;
+        $watch('theme', val => {
+            localStorage.setItem('theme', val);
+            document.documentElement.classList.toggle('dark', val === 'dark');
         });
-    </script>
-
-    <div x-data="i18n" class="flex flex-col min-h-screen">
+        $watch('lang', val => {
+            localStorage.setItem('lang', val);
+            document.documentElement.lang = val;
+        });
+    " class="flex flex-col min-h-screen">
 
         {% include 'components/navbar_news.html' %}
 

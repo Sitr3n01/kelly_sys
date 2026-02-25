@@ -10,7 +10,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent.parent
 env = environ.Env(DEBUG=(bool, False))
 environ.Env.read_env(BASE_DIR / '.env')
 
-SECRET_KEY = env('SECRET_KEY', default='django-insecure-change-me-in-production')
+SECRET_KEY = env('SECRET_KEY')
 DEBUG = env.bool('DEBUG', default=False)
 ALLOWED_HOSTS = env.list('ALLOWED_HOSTS', default=['localhost', '127.0.0.1'])
 
@@ -33,6 +33,7 @@ INSTALLED_APPS = [
     # Third-party
     'django_htmx',
     'imagekit',
+    'axes',
 
     # Project apps
     'apps.common.apps.CommonConfig',
@@ -56,6 +57,7 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'django.contrib.sites.middleware.CurrentSiteMiddleware',
     'django_htmx.middleware.HtmxMiddleware',
+    'axes.middleware.AxesMiddleware',
 ]
 
 ROOT_URLCONF = 'config.urls'
@@ -83,9 +85,9 @@ WSGI_APPLICATION = 'config.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': env('DB_NAME', default='kelly_sys'),
-        'USER': env('DB_USER', default='kelly_user'),
-        'PASSWORD': env('DB_PASSWORD', default='kelly_pass'),
+        'NAME': env('DB_NAME'),
+        'USER': env('DB_USER'),
+        'PASSWORD': env('DB_PASSWORD'),
         'HOST': env('DB_HOST', default='localhost'),
         'PORT': env('DB_PORT', default='5432'),
     }
@@ -115,6 +117,9 @@ STATIC_URL = '/static/'
 STATICFILES_DIRS = [BASE_DIR / 'static']
 STATIC_ROOT = BASE_DIR / 'staticfiles'
 STORAGES = {
+    'default': {
+        'BACKEND': 'django.core.files.storage.FileSystemStorage',
+    },
     'staticfiles': {
         'BACKEND': 'whitenoise.storage.CompressedManifestStaticFilesStorage',
     },
@@ -129,10 +134,13 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 UNFOLD = {
     'SITE_TITLE': 'Kelly Sys',
     'SITE_HEADER': 'Painel de Administração',
-    'SITE_URL': '/',
+    'SITE_URL': None,  # Removido — links de portal estão na sidebar (Visualizar Portais)
     'SITE_ICON': None,  # Deixar None ou apontar para um favicon estático
     'SHOW_HISTORY': True,
     'SHOW_VIEW_ON_SITE': True,
+    'STYLES': [
+        lambda request: '/static/admin/css/overrides.css',
+    ],
     'COLORS': {
         'primary': {
             '50': '239 246 255',
@@ -152,6 +160,24 @@ UNFOLD = {
         'show_search': True,
         'show_all_applications': False,
         'navigation': [
+            {
+                'title': 'Visualizar Portais',
+                'separator': False,
+                'items': [
+                    {
+                        'title': 'Portal de Notícias',
+                        'icon': 'newspaper',
+                        'link': '/news/',
+                        'active': lambda request: False,  # Links externos — nunca marcar como ativo no admin
+                    },
+                    {
+                        'title': 'Portal Escolar',
+                        'icon': 'school',
+                        'link': '/',  # Escola está montada no prefixo raiz (path('', include(school.urls)))
+                        'active': lambda request: False,  # '/' seria substring de qualquer URL → sempre falso
+                    },
+                ],
+            },
             {
                 'title': 'Portal Escolar',
                 'separator': True,
@@ -262,8 +288,42 @@ UNFOLD = {
             },
         ],
     },
-    'INDEX_DASHBOARD': 'apps.common.dashboard.AdminDashboardView',
+    'DASHBOARD_CALLBACK': 'apps.common.dashboard.dashboard_callback',
 }
 
-# Email
+# ── Upload Limits ──────────────────────────────────────────────────────────
+DATA_UPLOAD_MAX_MEMORY_SIZE = 10485760   # 10 MB
+FILE_UPLOAD_MAX_MEMORY_SIZE = 10485760   # 10 MB
+
+# ── Email ──────────────────────────────────────────────────────────────────
+# Em produção, configurar via .env:
+#   EMAIL_BACKEND=django.core.mail.backends.smtp.EmailBackend
+#   EMAIL_HOST=smtp.seuservidor.com
+#   EMAIL_PORT=587
+#   EMAIL_HOST_USER=seu@email.com
+#   EMAIL_HOST_PASSWORD=sua_senha
+#   EMAIL_USE_TLS=True
+#   DEFAULT_FROM_EMAIL=Portal Kelly <noticias@seusite.com>
 EMAIL_BACKEND = env('EMAIL_BACKEND', default='django.core.mail.backends.console.EmailBackend')
+DEFAULT_FROM_EMAIL = env('DEFAULT_FROM_EMAIL', default='noreply@localhost')
+EMAIL_HOST = env('EMAIL_HOST', default='localhost')
+EMAIL_PORT = env.int('EMAIL_PORT', default=587)
+EMAIL_HOST_USER = env('EMAIL_HOST_USER', default='')
+EMAIL_HOST_PASSWORD = env('EMAIL_HOST_PASSWORD', default='')
+EMAIL_USE_TLS = env.bool('EMAIL_USE_TLS', default=True)
+
+# ── Authentication Backends (axes brute-force protection) ──────────────────
+AUTHENTICATION_BACKENDS = [
+    'axes.backends.AxesStandaloneBackend',
+    'django.contrib.auth.backends.ModelBackend',
+]
+
+AXES_FAILURE_LIMIT = 5
+AXES_COOLOFF_TIME = 0.5  # 30 minutos (em horas)
+AXES_LOCKOUT_PARAMETERS = ['ip_address', 'username']
+AXES_RESET_ON_SUCCESS = True
+AXES_PROXY_COUNT = 1
+AXES_META_PRECEDENCE_ORDER = [
+    'HTTP_X_FORWARDED_FOR',
+    'REMOTE_ADDR',
+]

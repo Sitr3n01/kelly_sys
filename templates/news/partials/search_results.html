@@ -1,18 +1,26 @@
 {% if page_obj %}
-<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+<div class="grid grid-cols-1 md:grid-cols-2 gap-8">
   {% for article in page_obj %}
-    {% include 'news/partials/article_card.html' %}
+  {% include 'news/partials/article_card.html' %}
   {% endfor %}
 </div>
 {% include 'news/partials/pagination.html' %}
 {% else %}
 {% if query %}
-<div class="text-center py-16 text-gray-500">
-  <svg class="w-16 h-16 text-gray-300 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
-  </svg>
-  <p class="text-lg">Nenhum resultado encontrado para <strong>"{{ query }}"</strong>.</p>
-  <p class="text-sm mt-2">Tente outros termos de busca.</p>
+<div class="text-center py-24 text-slate-500 dark:text-slate-400 flex flex-col items-center justify-center">
+  <span class="material-symbols-outlined text-6xl text-slate-300 dark:text-slate-600 mb-4">search_off</span>
+  <p class="text-lg font-ui"><span x-text="t('Nenhum resultado encontrado para', 'No results found for')">Nenhum
+      resultado encontrado para</span> <strong>"{{ query }}"</strong>.</p>
+  <p class="text-sm mt-2 font-ui" x-text="t('Tente outros termos de busca.', 'Try different search terms.')">Tente
+    outros termos de busca.</p>
+</div>
+{% else %}
+<div class="text-center py-24 text-slate-400 dark:text-slate-500 flex flex-col items-center justify-center">
+  <span class="material-symbols-outlined text-6xl text-slate-200 dark:text-slate-700 mb-4">search</span>
+  <h3 class="text-2xl font-bold font-display text-slate-700 dark:text-slate-300 mb-2"
+    x-text="t('Buscar Artigos', 'Search Articles')">Buscar Artigos</h3>
+  <p class="text-lg font-ui" x-text="t('Digite algum termo para pesquisar.', 'Type a term to search for.')">Digite algum
+    termo para pesquisar.</p>
 </div>
 {% endif %}
 {% endif %}

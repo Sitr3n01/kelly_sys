@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ article.title }} - {{ site.name }}</title>
+    <!--[if mso]>
+<style type="text/css">
+body, table, td, p, a { font-family: Helvetica, Arial, sans-serif !important; }
+h1, h2, h3 { font-family: Georgia, serif !important; }
+</style>
+<![endif]-->
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Newsreader:ital,wght@0,400;0,600;0,700;0,800;1,400&display=swap');
+
+        body {
+            font-family: 'Inter', Helvetica, Arial, sans-serif;
+        }
+
+        h1,
+        h2,
+        h3 {
+            font-family: 'Newsreader', Georgia, serif;
+        }
+    </style>
+</head>
+
+<body style="margin:0;padding:0;background-color:#f9fafb;-webkit-font-smoothing:antialiased;">
+
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#f9fafb;">
+        <tr>
+            <td align="center" style="padding:40px 16px;">
+
+                <!-- Container -->
+                <table role="presentation" width="600" cellpadding="0" cellspacing="0"
+                    style="max-width:600px;width:100%;background-color:#ffffff;border:1px solid #e5e7eb;">
+
+                    <!-- Header -->
+                    <tr>
+                        <td
+                            style="padding:40px 40px 30px;text-align:center;border-bottom:1px solid #e5e7eb;background-color:#ffffff;">
+                            {% if site_settings and site_settings.logo %}<img
+                                src="{{ base_url }}{{ site_settings.logo.url }}" alt="{{ site.name }}"
+                                style="max-height:48px;display:block;margin:0 auto 16px auto;" />{% endif %}
+                            <h1 style="margin:0;font-size:36px;font-weight:800;color:#1a1a1a;letter-spacing:-0.02em;">{{ site.name }}</h1>
+                        </td>
+                    </tr>
+
+                    <!-- Content Area -->
+                    <tr>
+                        <td style="padding:40px 40px 0;">
+
+                            <!-- Category -->
+                            {% if article.category %}
+                            <p
+                                style="margin:0 0 16px;font-size:12px;font-weight:600;color:#1152d4;text-transform:uppercase;letter-spacing:0.05em;">
+                                {{ article.category.name }}</p>
+                            {% endif %}
+
+                            <!-- Title -->
+                            <a href="{{ article_url }}" style="text-decoration:none;">
+                                <h2
+                                    style="margin:0 0 20px;font-size:36px;font-weight:800;color:#1a1a1a;line-height:1.15;letter-spacing:-0.03em;">
+                                    {{ article.title }}</h2>
+                            </a>
+
+                            <!-- Author & Date -->
+                            <table role="presentation" cellpadding="0" cellspacing="0" style="margin-bottom:24px;">
+                                <tr>
+                                    {% if article.author %}
+                                    <td style="padding-right:8px;"><span
+                                            style="font-size:14px;color:#6b7280;">Por</span></td>
+                                    <td style="padding-right:16px;"><span style="font-size:14px;font-weight:600;color:#1a1a1a;">{{ article.author.get_full_name|default:article.author.username }}</span></td>
+                                    {% endif %}
+                                    {% if article.published_at %}
+                                    <td><span style="font-size:14px;color:#6b7280;">{{ article.published_at|date:"d M, Y" }}</span></td>
+                                    {% endif %}
+                                </tr>
+                            </table>
+
+                            <!-- Featured Image -->
+                            {% if article.featured_image %}
+                            <div style="margin-bottom:28px;">
+                                <a href="{{ article_url }}" style="text-decoration:none;display:block;">
+                                    <img src="{{ base_url }}{{ article.featured_image.url }}" alt="{{ article.title }}"
+                                        style="width:100%;height:auto;display:block;background-color:#f3f4f6;" />
+                                </a>
+                            </div>
+                            {% endif %}
+
+                            <!-- Excerpt -->
+                            <p
+                                style="margin:0 0 32px;font-size:18px;color:#4b5563;line-height:1.6;font-family:'Newsreader', Georgia, serif;">
+                                {{ article.excerpt|default:article.content|striptags|truncatewords:50 }}
+                            </p>
+
+                            <!-- Tags -->
+                            {% if article.tags.all %}
+                            <p style="margin:0 0 32px;font-size:12px;color:#64748b;">
+                                {% for tag in article.tags.all %}
+                                <span style="display:inline-block;background-color:#f1f5f9;color:#64748b;padding:4px 12px;border-radius:2px;margin:0 4px 4px 0;font-size:11px;font-weight:500;">{{ tag.name }}</span>
+                                {% endfor %}
+                            </p>
+                            {% endif %}
+
+                            <!-- CTA Button -->
+                            <table role="presentation" cellpadding="0" cellspacing="0" style="margin-bottom:40px;">
+                                <tr>
+                                    <td style="background-color:#1152d4;border-radius:2px;">
+                                        <a href="{{ article_url }}"
+                                            style="display:inline-block;padding:14px 28px;font-size:15px;font-weight:600;color:#ffffff;text-decoration:none;">Ler
+                                            Artigo Completo</a>
+                                    </td>
+                                </tr>
+                            </table>
+
+                        </td>
+                    </tr>
+
+                    <!-- Divider -->
+                    <tr>
+                        <td style="padding:0;border-top:1px solid #e5e7eb;"></td>
+                    </tr>
+
+                    <!-- Footer -->
+                    <tr>
+                        <td style="padding:32px 40px;text-align:center;background-color:#ffffff;">
+                            <p style="margin:0 0 12px;font-size:14px;color:#6b7280;line-height:1.5;">Você recebeu este
+                                e-mail porque está inscrito na nossa newsletter.</p>
+                            {% if site_settings and site_settings.primary_email %}<p
+                                style="margin:0 0 16px;font-size:14px;color:#6b7280;">Contato: <a
+                                    href="mailto:{{ site_settings.primary_email }}"
+                                    style="color:#1152d4;text-decoration:none;">{{ site_settings.primary_email }}</a>
+                            </p>{% endif %}
+                            <p style="margin:0;font-size:13px;">
+                                <a href="{{ base_url }}/news/"
+                                    style="color:#1152d4;text-decoration:none;font-weight:500;">Visitar o Portal</a>
+                                <span style="color:#e5e7eb;margin:0 12px;">|</span>
+                                <a href="{{ unsubscribe_url }}"
+                                    style="color:#6b7280;text-decoration:underline;">Gerenciar preferências</a>
+                            </p>
+                        </td>
+                    </tr>
+
+                </table>
+
+                <!-- Sub-footer -->
+                <table role="presentation" width="600" cellpadding="0" cellspacing="0"
+                    style="max-width:600px;width:100%;">
+                    <tr>
+                        <td style="padding:24px 40px;text-align:center;">
+                            <p style="margin:0;font-size:12px;color:#9ca3af;">&copy; {{ site.name }}.</p>
+                        </td>
+                    </tr>
+                </table>
+
+            </td>
+        </tr>
+    </table>
+
+</body>
+
+</html>

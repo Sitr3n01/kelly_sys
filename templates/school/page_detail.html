@@ -1,4 +1,5 @@
 {% extends 'base_school.html' %}
+{% load sanitize %}
 
 {% block title %}{{ page.meta_title|default:page.title }} - {{ current_site.name }}{% endblock %}
 {% block meta_description %}{{ page.meta_description }}{% endblock %}
@@ -15,7 +16,7 @@
         <h1 class="text-4xl md:text-5xl font-display font-bold text-gray-900 mb-8">{{ page.title }}</h1>
 
         <div class="text-gray-700 leading-relaxed font-sans">
-            {{ page.content|safe }}
+            {{ page.content|sanitize_html }}
         </div>
     </article>
 </div>

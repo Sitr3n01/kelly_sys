@@ -13,9 +13,11 @@ def job_detail(request, slug):
     if request.method == 'POST':
         form = ApplicationForm(request.POST, request.FILES)
         if form.is_valid():
-            application = form.save(commit=False)
-            application.job = job
-            application.save()
+            email = form.cleaned_data.get('email')
+            if not Application.objects.filter(job=job, email=email).exists():
+                application = form.save(commit=False)
+                application.job = job
+                application.save()
             messages.success(request, 'Sua candidatura foi enviada com sucesso!')
             return redirect('hiring:job_detail', slug=job.slug)
     else:

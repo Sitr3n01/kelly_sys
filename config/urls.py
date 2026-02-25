@@ -2,16 +2,10 @@ from django.contrib import admin
 from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
-from django.conf.urls.i18n import i18n_patterns
-from django.views.i18n import set_language
 
 from django.contrib.sitemaps.views import sitemap
 from apps.news.sitemaps import ArticleSitemap
 from apps.school.sitemaps import PageSitemap
-from apps.common.dashboard import AdminDashboardView
-
-# Override admin index with custom dashboard
-admin.site.index = AdminDashboardView.as_view()
 
 sitemaps = {
     'news': ArticleSitemap,

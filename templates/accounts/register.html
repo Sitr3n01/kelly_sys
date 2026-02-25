@@ -20,25 +20,59 @@
             {% endif %}
 
             {% for field in form %}
+            {% if field.name != 'subscribe_newsletter' %}
             <div>
                 <label for="{{ field.id_for_label }}"
-                    class="block text-sm font-bold text-slate-700 dark:text-slate-300 font-ui mb-2">{{ field.label
-                    }}</label>
+                    class="block text-sm font-bold text-slate-700 dark:text-slate-300 font-ui mb-2">
+                    {{ field.label }}
+                </label>
                 <input type="{{ field.field.widget.input_type }}" name="{{ field.name }}" id="{{ field.id_for_label }}"
                     {% if field.field.required %}required{% endif %}
+                    value="{{ field.value|default:'' }}"
                     class="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-transparent px-4 py-3 text-slate-900 dark:text-white focus:border-primary focus:ring-1 focus:ring-primary font-ui transition-all"
                     placeholder="{{ field.label }}">
                 {% if field.errors %}
                 <p class="mt-1 text-sm text-red-500 font-ui">{{ field.errors.0 }}</p>
                 {% endif %}
                 {% if field.help_text %}
-                <p class="mt-1 text-xs text-slate-500 font-ui">{{ field.help_text|safe }}</p>
+                <p class="mt-1 text-xs text-slate-500 font-ui">{{ field.help_text }}</p>
                 {% endif %}
             </div>
+            {% endif %}
             {% endfor %}
 
+            {# Toggle de newsletter — renderizado manualmente fora do loop #}
+            <label for="id_subscribe_newsletter"
+                class="flex items-center justify-between gap-4 py-3 px-4 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 cursor-pointer hover:border-primary/50 transition-colors">
+                <div>
+                    <p class="text-sm font-bold text-slate-700 dark:text-slate-300 font-ui"
+                        x-text="t('Receber newsletter', 'Subscribe to newsletter')">Receber newsletter</p>
+                    <p class="text-xs text-slate-500 font-ui mt-0.5"
+                        x-text="t('Receba novos artigos diretamente no seu e-mail.', 'Get new articles in your inbox.')">
+                        Receba novos artigos diretamente no seu e-mail.</p>
+                </div>
+                <div class="relative flex-shrink-0">
+                    <input type="checkbox" name="subscribe_newsletter" id="id_subscribe_newsletter"
+                        class="sr-only peer">
+                    <div class="w-11 h-6 bg-slate-300 dark:bg-slate-600 rounded-full
+                                peer-checked:bg-primary
+                                after:content-[''] after:absolute after:top-[2px] after:left-[2px]
+                                after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all after:shadow-sm
+                                peer-checked:after:translate-x-5">
+                    </div>
+                </div>
+            </label>
+
+            <div class="text-xs text-center text-slate-500 font-ui my-4">
+                <span x-text="t('Ao se registrar, você concorda com nossos', 'By registering, you agree to our')">Ao se
+                    registrar, você concorda com nossos</span>
+                <a href="{% url 'school:privacy' %}" class="text-primary hover:underline font-bold" target="_blank"
+                    x-text="t('Termos de Serviço e Política de Privacidade', 'Terms of Service and Privacy Policy')">Termos
+                    de Serviço e Política de Privacidade</a>.
+            </div>
+
             <button type="submit"
-                class="w-full mt-4 py-3.5 px-4 bg-primary text-white font-bold rounded-xl font-ui shadow-sm hover:bg-primary/90 hover:shadow-primary/30 transition-all flex justify-center items-center">
+                class="w-full mt-2 py-3.5 px-4 bg-primary text-white font-bold rounded-xl font-ui shadow-sm hover:bg-primary/90 hover:shadow-primary/30 transition-all flex justify-center items-center">
                 <span x-text="t('Registrar', 'Sign Up')">Registrar</span>
             </button>
         </form>

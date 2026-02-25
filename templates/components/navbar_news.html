@@ -1,6 +1,6 @@
 <header x-data="{ mobileMenuOpen: false }"
     class="sticky top-0 z-50 bg-background-light/95 dark:bg-background-dark/95 backdrop-blur-sm border-b border-gray-100 dark:border-gray-800 transition-colors duration-200">
-    <div class="max-w-[1200px] mx-auto px-6 h-16 flex items-center justify-between">
+    <div class="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
         <!-- Logo Section -->
         <div class="flex items-center gap-3">
             <a href="{% url 'news:list' %}" class="flex items-center gap-3 group">
@@ -75,13 +75,12 @@
                 Escola de Comunicação
             </a>
 
-            <!-- Subscribe Button (Scrolls to newsletter) -->
-            <button
-                onclick="const el = document.getElementById('sidebar-newsletter') || document.getElementById('article-newsletter'); if(el) el.scrollIntoView({behavior: 'smooth'});"
-                class="font-ui bg-primary text-white text-xs font-semibold px-4 py-2 rounded-full hover:bg-primary/90 transition-colors shadow-sm hover:shadow-primary/30"
+            <!-- Subscribe Button -->
+            <a href="{% if request.user.is_authenticated %}{% url 'news:user_dashboard' %}{% else %}{% url 'accounts:register' %}{% endif %}"
+                class="font-ui bg-primary text-white text-xs font-semibold px-4 py-2 rounded-full hover:bg-primary/90 transition-colors shadow-sm hover:shadow-primary/30 inline-flex items-center justify-center"
                 x-text="t('Assinar', 'Subscribe')">
                 Assinar
-            </button>
+            </a>
 
             <!-- User Account Dropdown -->
             <div x-data="{ openUser: false }" class="relative hidden md:block" @mouseenter="openUser = true"
@@ -105,8 +104,7 @@
                     class="absolute top-10 right-0 w-56 bg-white dark:bg-slate-900 rounded-lg shadow-xl border border-slate-100 dark:border-slate-800 py-2 z-[60]">
                     {% if request.user.is_authenticated %}
                     <div class="px-4 py-3 border-b border-slate-100 dark:border-slate-800 mb-1">
-                        <p class="text-sm font-bold text-slate-900 dark:text-white truncate">{{
-                            request.user.get_full_name|default:request.user.username }}</p>
+                        <p class="text-sm font-bold text-slate-900 dark:text-white truncate">{{ request.user.get_full_name|default:request.user.username }}</p>
                         <p class="text-xs text-slate-500 font-ui truncate">{{ request.user.email }}</p>
                     </div>
                     <a href="{% url 'news:user_dashboard' %}"

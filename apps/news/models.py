@@ -10,23 +10,27 @@ from apps.common.models import SEOModel, TimeStampedModel
 
 
 class Category(TimeStampedModel):
-    name = models.CharField(max_length=200)
+    name = models.CharField('Nome', max_length=200)
     slug = models.SlugField(max_length=200, unique=True)
-    description = models.TextField(blank=True)
-    parent = models.ForeignKey('self', on_delete=models.CASCADE, null=True, blank=True, related_name='children')
-    order = models.PositiveIntegerField(default=0)
+    description = models.TextField('Descrição', blank=True)
+    parent = models.ForeignKey(
+        'self', on_delete=models.CASCADE, null=True, blank=True,
+        related_name='children', verbose_name='Categoria pai',
+        help_text='Deixe vazio para criar uma categoria principal.',
+    )
+    order = models.PositiveIntegerField('Ordem', default=0)
 
     class Meta:
         ordering = ['order', 'name']
-        verbose_name = 'Category'
-        verbose_name_plural = 'Categories'
+        verbose_name = 'Categoria'
+        verbose_name_plural = 'Categorias'
 
     def __str__(self):
         return self.name
 
 
 class Tag(models.Model):
-    name = models.CharField(max_length=200)
+    name = models.CharField('Nome', max_length=200)
     slug = models.SlugField(max_length=200, unique=True)
 
     class Meta:
@@ -40,38 +44,73 @@ class Tag(models.Model):
 
 class Article(TimeStampedModel, SEOModel):
     class Status(models.TextChoices):
-        DRAFT = 'draft', 'Draft'
-        PUBLISHED = 'published', 'Published'
-        ARCHIVED = 'archived', 'Archived'
+        DRAFT = 'draft', 'Rascunho'
+        PUBLISHED = 'published', 'Publicado'
+        ARCHIVED = 'archived', 'Arquivado'
 
-    title = models.CharField(max_length=200)
-    slug = models.SlugField(max_length=200, unique=True)
-    excerpt = models.TextField(blank=True)
-    content = models.TextField()
-    featured_image = models.ImageField(upload_to='news/articles/', blank=True)
-    featured_image_caption = models.CharField(max_length=255, blank=True)
-    category = models.ForeignKey(Category, on_delete=models.SET_NULL, null=True, related_name='articles')
-    tags = models.ManyToManyField(Tag, blank=True, related_name='articles')
-    author = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, related_name='articles')
-    site = models.ForeignKey(Site, on_delete=models.CASCADE, related_name='articles')
-    status = models.CharField(max_length=20, choices=Status.choices, default=Status.DRAFT)
-    published_at = models.DateTimeField(null=True, blank=True)
-    is_featured = models.BooleanField(default=False)
-    view_count = models.PositiveIntegerField(default=0)
+    title = models.CharField('Título', max_length=200)
+    slug = models.SlugField('URL amigável', max_length=200, unique=True, help_text='Gerado automaticamente a partir do título.')
+    excerpt = models.TextField('Resumo', blank=True, help_text='Resumo curto do artigo. Aparece nas listagens e compartilhamentos.')
+    content = models.TextField('Conteúdo')
+    featured_image = models.ImageField('Imagem de capa', upload_to='news/articles/', blank=True, help_text='Imagem principal que aparece no topo do artigo.')
+    featured_image_caption = models.CharField('Legenda da imagem', max_length=255, blank=True, help_text='Texto descritivo exibido abaixo da imagem de capa.')
+    category = models.ForeignKey(
+        Category, on_delete=models.SET_NULL, null=True,
+        related_name='articles', verbose_name='Categoria',
+        help_text='Escolha a categoria principal do artigo.',
+    )
+    tags = models.ManyToManyField(
+        Tag, blank=True, related_name='articles', verbose_name='Tags',
+        help_text='Digite para buscar tags existentes.',
+    )
+    author = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True,
+        related_name='articles', verbose_name='Autor',
+    )
+    site = models.ForeignKey(
+        Site, on_delete=models.CASCADE, related_name='articles',
+        verbose_name='Site', help_text='Em qual portal este artigo será publicado.',
+    )
+    status = models.CharField(
+        'Status', max_length=20, choices=Status.choices, default=Status.DRAFT,
+        help_text='Rascunho: não publicado. Publicado: visível no site. Arquivado: removido do site.',
+    )
+    published_at = models.DateTimeField('Publicado em', null=True, blank=True, help_text='Data e hora da publicação. Preenchido automaticamente ao publicar.')
+    is_featured = models.BooleanField('Destaque', default=False, help_text='Artigos destacados aparecem em posição de destaque na página principal.')
+    view_count = models.PositiveIntegerField('Visualizações', default=0)
+    meta_title = models.CharField('Título SEO', max_length=70, blank=True, help_text='Título para buscadores (Google). Se vazio, usa o título do artigo.')
+    meta_description = models.CharField('Descrição SEO', max_length=160, blank=True, help_text='Descrição para buscadores (Google). Se vazio, usa o resumo.')
+
+    newsletter_sent_at = models.DateTimeField(
+        'Newsletter enviada em', null=True, blank=True, editable=False,
+        help_text='Preenchido automaticamente quando a newsletter é enviada via sinal ou ação do admin.',
+    )
 
     objects = models.Manager()
     on_site = CurrentSiteManager()
 
     class Meta:
         ordering = ['-published_at']
-        verbose_name = 'Article'
-        verbose_name_plural = 'Articles'
+        verbose_name = 'Artigo'
+        verbose_name_plural = 'Artigos'
 
     def __str__(self):
         return self.title
 
     def get_absolute_url(self):
         return reverse('news:article_detail', kwargs={'slug': self.slug})
+
+    def save(self, *args, **kwargs):
+        from django.utils import timezone
+
+        from apps.common.sanitization import sanitize_content
+
+        if self.content:
+            self.content = sanitize_content(self.content)
+
+        if self.status == self.Status.PUBLISHED and self.published_at is None:
+            self.published_at = timezone.now()
+        super().save(*args, **kwargs)
 
     @property
     def reading_time(self):
@@ -81,18 +120,22 @@ class Article(TimeStampedModel, SEOModel):
 
 
 class NewsletterSubscription(TimeStampedModel):
-    email = models.EmailField()
-    is_active = models.BooleanField(default=True)
+    email = models.EmailField('E-mail')
+    is_active = models.BooleanField(
+        'Ativo', default=True,
+        help_text='Desmarque para cancelar a inscrição deste email.',
+    )
     site = models.ForeignKey(
         Site,
         on_delete=models.CASCADE,
         related_name='newsletter_subscriptions',
+        verbose_name='Site',
     )
 
     class Meta:
         ordering = ['-created_at']
-        verbose_name = 'Newsletter Subscription'
-        verbose_name_plural = 'Newsletter Subscriptions'
+        verbose_name = 'Assinatura de Newsletter'
+        verbose_name_plural = 'Assinaturas de Newsletter'
         unique_together = [['email', 'site']]
 
     def __str__(self):
@@ -100,43 +143,64 @@ class NewsletterSubscription(TimeStampedModel):
 
 
 class ArticleLike(TimeStampedModel):
-    article = models.ForeignKey(Article, on_delete=models.CASCADE, related_name='likes')
-    ip_address = models.GenericIPAddressField(null=True, blank=True)
-    session_key = models.CharField(max_length=40, null=True, blank=True)
-    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name='article_likes')
+    article = models.ForeignKey(
+        Article, on_delete=models.CASCADE,
+        related_name='likes', verbose_name='Artigo',
+    )
+    ip_address = models.GenericIPAddressField('Endereço IP', null=True, blank=True)
+    session_key = models.CharField('Chave de sessão', max_length=40, null=True, blank=True)
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True,
+        related_name='article_likes', verbose_name='Usuário',
+    )
 
     class Meta:
-        verbose_name = 'Article Like'
-        verbose_name_plural = 'Article Likes'
+        verbose_name = 'Curtida'
+        verbose_name_plural = 'Curtidas'
         unique_together = [['article', 'ip_address', 'session_key', 'user']]
 
     def __str__(self):
-        return f'Like on {self.article.title}'
+        return f'Curtida em {self.article.title}'
 
 
 class Comment(TimeStampedModel):
-    article = models.ForeignKey(Article, on_delete=models.CASCADE, related_name='comments')
-    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='comments')
-    content = models.TextField()
-    is_active = models.BooleanField(default=True, help_text="Uncheck to hide this comment (admin moderation).")
+    article = models.ForeignKey(
+        Article, on_delete=models.CASCADE,
+        related_name='comments', verbose_name='Artigo',
+    )
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE,
+        related_name='comments', verbose_name='Usuário',
+    )
+    content = models.TextField('Comentário')
+    is_active = models.BooleanField(
+        'Visível', default=True,
+        help_text='Desmarque para ocultar este comentário do portal.',
+    )
 
     class Meta:
         ordering = ['-created_at']
-        verbose_name = 'Comment'
-        verbose_name_plural = 'Comments'
+        verbose_name = 'Comentário'
+        verbose_name_plural = 'Comentários'
 
     def __str__(self):
-        return f'Comment by {self.user} on {self.article.title}'
+        return f'{self.user} em {self.article.title}'
 
 
 class ArticleBookmark(TimeStampedModel):
-    article = models.ForeignKey(Article, on_delete=models.CASCADE, related_name='bookmarks')
-    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='bookmarked_articles')
+    article = models.ForeignKey(
+        Article, on_delete=models.CASCADE,
+        related_name='bookmarks', verbose_name='Artigo',
+    )
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE,
+        related_name='bookmarked_articles', verbose_name='Usuário',
+    )
 
     class Meta:
-        verbose_name = 'Article Bookmark'
-        verbose_name_plural = 'Article Bookmarks'
+        verbose_name = 'Favorito'
+        verbose_name_plural = 'Favoritos'
         unique_together = [['article', 'user']]
 
     def __str__(self):
-        return f'{self.user} bookmarked {self.article.title}'
+        return f'{self.user} favoritou {self.article.title}'

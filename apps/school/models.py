@@ -1,24 +1,35 @@
-from django.db import models
+from django.contrib.sites.managers import CurrentSiteManager
 from django.contrib.sites.models import Site
-from apps.common.models import TimeStampedModel, SEOModel
+from django.db import models
+
+from apps.common.models import SEOModel, TimeStampedModel
 
 
 class Page(TimeStampedModel, SEOModel):
     site = models.ForeignKey(Site, on_delete=models.CASCADE, related_name='pages')
     title = models.CharField(max_length=200)
     slug = models.SlugField(max_length=200, unique=True)
-    content = models.TextField(blank=True) # HTML Content
+    content = models.TextField(blank=True)
     featured_image = models.ImageField(upload_to='school/pages/', blank=True)
     is_published = models.BooleanField(default=False)
     order = models.PositiveIntegerField(default=0)
 
+    objects = models.Manager()
+    on_site = CurrentSiteManager()
+
     class Meta:
         ordering = ['order', 'title']
-        verbose_name = 'Page'
-        verbose_name_plural = 'Pages'
+        verbose_name = 'Página'
+        verbose_name_plural = 'Páginas'
 
     def __str__(self):
         return f'{self.title} ({self.site.name})'
+
+    def save(self, *args, **kwargs):
+        from apps.common.sanitization import sanitize_content
+        if self.content:
+            self.content = sanitize_content(self.content)
+        super().save(*args, **kwargs)
 
 
 class TeamMember(TimeStampedModel):
@@ -32,8 +43,8 @@ class TeamMember(TimeStampedModel):
 
     class Meta:
         ordering = ['order', 'name']
-        verbose_name = 'Team Member'
-        verbose_name_plural = 'Team Members'
+        verbose_name = 'Membro da Equipe'
+        verbose_name_plural = 'Membros da Equipe'
 
     def __str__(self):
         return self.name
@@ -48,8 +59,8 @@ class Testimonial(TimeStampedModel):
 
     class Meta:
         ordering = ['-created_at']
-        verbose_name = 'Testimonial'
-        verbose_name_plural = 'Testimonials'
+        verbose_name = 'Depoimento'
+        verbose_name_plural = 'Depoimentos'
 
     def __str__(self):
         return self.name
