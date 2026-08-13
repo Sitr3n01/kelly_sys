@@ -455,3 +455,114 @@ def test_robots_txt_usa_o_host_da_request(client):
     response = client.get('/robots.txt', HTTP_HOST='kellyfarias.com.br')
 
     assert 'Sitemap: http://kellyfarias.com.br/sitemap.xml' in response.content.decode()
+
+
+# ── Tetos de upload de imagem: os dois caminhos não podem divergir ──────────
+
+
+def test_teto_de_upload_do_wagtail_casa_com_o_validador_legado(settings):
+    """WAGTAILIMAGES_MAX_UPLOAD_SIZE espelha validators.MAX_UPLOAD_BYTES.
+
+    O numero e repetido em config/settings/base.py porque settings e avaliado antes
+    do app registry — nao da para importar apps.common.validators la. Este teste e a
+    trava contra os dois valores divergirem em silencio, deixando o upload por
+    /cms/images/ mais permissivo que o dos campos legados.
+    """
+    from apps.common.validators import ALLOWED_IMAGE_EXTENSIONS, MAX_UPLOAD_BYTES
+
+    assert settings.WAGTAILIMAGES_MAX_UPLOAD_SIZE == MAX_UPLOAD_BYTES
+    assert set(settings.WAGTAILIMAGES_EXTENSIONS) == {
+        ext.lstrip('.') for ext in ALLOWED_IMAGE_EXTENSIONS
+    }
+
+
+def test_teto_de_pixels_fica_abaixo_do_default_do_wagtail(settings):
+    """O default do Wagtail e 128 MP — decode suficiente para derrubar o worker.
+
+    Ver wagtail/images/fields.py: sem a setting, um unico upload pode fazer o Pillow
+    alocar centenas de MB dentro de um container limitado a 1500M.
+    """
+    assert settings.WAGTAILIMAGES_MAX_IMAGE_PIXELS < 128 * 1_000_000
+
+
+# ── scan_orphan_media: o HTML legado não tem FK que o rastreie ──────────────
+
+
+def _escreve(media_root, caminho_relativo):
+    destino = media_root / caminho_relativo
+    destino.parent.mkdir(parents=True, exist_ok=True)
+    destino.write_bytes(b'conteudo-de-teste')
+    return destino
+
+
+@pytest.mark.django_db
+def test_scan_orphan_media_nao_marca_arquivo_citado_no_html_legado(settings, tmp_path, current_site):
+    """Imagem referenciada só em Article.content não pode virar órfã.
+
+    É a razão de o comando existir: `content` guarda HTML legado com
+    `<img src="/media/...">` e nenhuma chave estrangeira aponta para esse
+    arquivo. Uma varredura por FK sozinha o apagaria — quebrando a imagem de um
+    artigo publicado.
+    """
+    from io import StringIO
+
+    from django.core.management import call_command
+
+    from apps.news.models import Article
+
+    settings.MEDIA_ROOT = str(tmp_path)
+    _escreve(tmp_path, 'news/articles/citada-no-html.jpg')
+    _escreve(tmp_path, 'media_library/files/ninguem-usa.png')
+
+    Article.objects.create(
+        title='Artigo com imagem embutida', slug='imagem-embutida',
+        content='<p>texto</p><img src="/media/news/articles/citada-no-html.jpg">',
+        site=current_site, status=Article.Status.PUBLISHED,
+    )
+
+    saida = StringIO()
+    call_command('scan_orphan_media', stdout=saida)
+    texto = saida.getvalue()
+
+    assert 'citada-no-html.jpg' not in texto, 'imagem do HTML legado foi marcada como órfã'
+    assert 'ninguem-usa.png' in texto
+    assert 'Referências embutidas em content/body: 1' in texto
+
+
+@pytest.mark.django_db
+def test_scan_orphan_media_marca_original_do_wagtail_como_risco_alto(settings, tmp_path):
+    """Órfão em original_images/ sai como RISCO ALTO, sem linha `rm` pronta.
+
+    É o original do Wagtail: apagar um que ainda esteja em uso destrói a
+    regeneração de todas as renditions daquela imagem.
+    """
+    from io import StringIO
+
+    from django.core.management import call_command
+
+    settings.MEDIA_ROOT = str(tmp_path)
+    _escreve(tmp_path, 'original_images/capa-solta.jpg')
+
+    saida = StringIO()
+    call_command('scan_orphan_media', stdout=saida)
+    texto = saida.getvalue()
+
+    assert 'RISCO ALTO' in texto
+    assert 'capa-solta.jpg' in texto
+    assert "rm '" not in texto, 'original do Wagtail não deve vir com rm pronto'
+
+
+@pytest.mark.django_db
+def test_scan_orphan_media_ignora_dotfiles(settings, tmp_path):
+    """.gitkeep é marcador estrutural, não lixo."""
+    from io import StringIO
+
+    from django.core.management import call_command
+
+    settings.MEDIA_ROOT = str(tmp_path)
+    _escreve(tmp_path, '.gitkeep')
+
+    saida = StringIO()
+    call_command('scan_orphan_media', stdout=saida)
+
+    assert 'Nenhum órfão' in saida.getvalue()

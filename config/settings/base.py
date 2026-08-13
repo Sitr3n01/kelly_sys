@@ -192,6 +192,20 @@ WAGTAILADMIN_BASE_URL = env('WAGTAILADMIN_BASE_URL', default='http://localhost:8
 WAGTAILIMAGES_IMAGE_MODEL = 'cms_media.Image'
 WAGTAILDOCS_DOCUMENT_MODEL = 'cms_media.Document'
 
+# Teto de upload de imagem no caminho do Wagtail (/cms/images/).
+#
+# `apps.common.validators.validate_uploaded_image` (5 MB + Pillow verify) está ligado
+# só aos ProcessedImageField legados e ao media_library — o upload do Wagtail passava
+# direto e caía nos defaults dele: 10 MB e 128 MEGAPIXELS. Um único arquivo assim faz
+# o Pillow alocar centenas de MB dentro de um worker limitado a 1500M.
+#
+# Os valores são repetidos aqui de propósito, e não importados de
+# apps.common.validators: settings é avaliado antes do app registry estar pronto.
+# Fonte de verdade do número: MAX_UPLOAD_BYTES naquele módulo.
+WAGTAILIMAGES_MAX_UPLOAD_SIZE = 5 * 1024 * 1024   # espelha validators.MAX_UPLOAD_BYTES
+WAGTAILIMAGES_MAX_IMAGE_PIXELS = 25_000_000       # ~6000x4000; o default do Wagtail é 128 MP
+WAGTAILIMAGES_EXTENSIONS = ['jpg', 'jpeg', 'png', 'webp']  # o default do Wagtail também aceita gif
+
 # Manda o require_admin_access e o botão de sair do Wagtail para o login
 # unificado (ver wagtail/admin/auth.py e wagtail/admin/views/account.py). É o
 # gancho oficial — nada de editar código do Wagtail.
@@ -202,6 +216,22 @@ WAGTAILADMIN_LOGIN_URL = 'panel:login'
 # rate limit — os dois presentes em apps.accounts.views.CustomPasswordResetView,
 # que passa a ser o único caminho.
 WAGTAIL_PASSWORD_RESET_ENABLED = False
+
+# Backend de tasks explícito, e não por omissão.
+#
+# O Wagtail 7.4 traz django_tasks e enfileira ali a atualização do índice de
+# referências e do índice de busca a cada save. Sem a chave TASKS, a biblioteca cai
+# no ImmediateBackend, que executa a tarefa de forma síncrona no próprio processo
+# que salvou. Isso é aceitável aqui: quem paga é a request de um editor salvando um
+# artigo, não o tráfego público. A alternativa (DatabaseBackend) exigiria um
+# processo `db_worker` permanente, que em 1 vCPU custa mais do que economiza.
+#
+# Declarar não muda comportamento — transforma um default acidental em decisão.
+TASKS = {
+    'default': {
+        'BACKEND': 'django_tasks.backends.immediate.ImmediateBackend',
+    },
+}
 
 
 

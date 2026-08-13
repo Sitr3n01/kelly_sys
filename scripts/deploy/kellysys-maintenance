@@ -36,8 +36,21 @@ cd "${PROJECT_DIR}"
 log "Cleaning expired Django sessions"
 compose exec -T web python manage.py clearsessions
 
-log "Refreshing PostgreSQL planner stats for django_session"
-compose exec -T db sh -c 'psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" -c "VACUUM (ANALYZE) django_session;"'
+log "Removing expired verification codes"
+compose exec -T web python manage.py clear_expired_verification_codes
+
+# Article e RevisionMixin + DraftStateMixin + WorkflowMixin: cada save grava um
+# snapshot JSON inteiro em wagtailcore_revision, e nada purgava essa tabela — ela so
+# crescia, inflando junto o working set do Postgres e o tempo do pg_dump.
+# purge_revisions preserva latest_revision, publicacao agendada e revisao em workflow,
+# entao rascunho nao se perde.
+log "Purging Wagtail revisions older than 30 days"
+compose exec -T web python manage.py purge_revisions --days=30
+
+# django_cache e wagtailcore_revision entram no VACUUM: as tres tabelas que este
+# script realmente movimenta.
+log "Refreshing PostgreSQL planner stats"
+compose exec -T db sh -c 'psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" -c "VACUUM (ANALYZE) django_session, django_cache, wagtailcore_revision;"'
 
 if [[ -d "${BACKUP_DIR}" ]]; then
     log "Pruning PostgreSQL backups older than 30 days"
