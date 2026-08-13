@@ -422,3 +422,36 @@ def test_project_migrations_reference_existing_wagtail_nodes():
         'Migrations do projeto dependem de nós de wagtailcore que não existem na '
         f'versão instalada: {faltando}. Maior nó disponível: {max(nos_wagtailcore)}'
     )
+
+
+# ── robots.txt ──────────────────────────────────────────────────────────────
+
+
+@pytest.mark.django_db
+def test_robots_txt_bloqueia_busca_e_anuncia_sitemap(client):
+    """robots.txt sai como texto puro, barra /news/search/ e aponta o sitemap.
+
+    A busca faz `content__icontains` (ILIKE '%...%') sobre o corpo dos artigos,
+    sem indice possivel e com o Paginator executando a consulta duas vezes —
+    manter crawler fora dela e o maior ganho de CPU do portal.
+    """
+    response = client.get('/robots.txt')
+
+    assert response.status_code == 200
+    assert response['Content-Type'].startswith('text/plain')
+
+    body = response.content.decode()
+    assert 'Disallow: /news/search/' in body
+    assert 'Disallow: /cms/' in body
+    assert 'Disallow: /admin/' in body
+
+
+@pytest.mark.django_db
+def test_robots_txt_usa_o_host_da_request(client):
+    """A linha Sitemap: segue o host, porque dois dominios dividem esta aplicacao.
+
+    Um caminho absoluto fixo apontaria o crawler de um dominio para o outro.
+    """
+    response = client.get('/robots.txt', HTTP_HOST='kellyfarias.com.br')
+
+    assert 'Sitemap: http://kellyfarias.com.br/sitemap.xml' in response.content.decode()

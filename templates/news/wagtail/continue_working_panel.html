@@ -3,8 +3,8 @@
     {% panel id="continue-working" heading="Continue trabalhando" icon="edit" classname="w-panel--dashboard" %}
         <div class="redacao-continue-card">
             <div class="redacao-continue-card__thumb">
-                {% if article.cover_image_url %}
-                    <img src="{{ article.cover_image_url }}" alt="">
+                {% if article.card_image_url %}
+                    <img src="{{ article.card_image_url }}" alt="">
                 {% else %}
                     {% icon name="doc-empty" %}
                 {% endif %}

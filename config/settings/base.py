@@ -514,7 +514,11 @@ CACHES = {
         'LOCATION': 'django_cache',
         'TIMEOUT': 300,
         'KEY_PREFIX': 'kb',
-        'OPTIONS': {'MAX_ENTRIES': 5000, 'CULL_FREQUENCY': 3},
+        # MAX_ENTRIES subiu de 5000 porque o cache passou a carregar tambem as chaves
+        # de dedup de view_count (apps/news/views.py) e as paginas de sitemap, alem do
+        # rate limiting. Com o teto antigo, o cull comecaria a derrubar justamente as
+        # entradas de rate limit. CULL_FREQUENCY 4 remove 1/4 no estouro, em vez de 1/3.
+        'OPTIONS': {'MAX_ENTRIES': 20000, 'CULL_FREQUENCY': 4},
     },
 }
 
