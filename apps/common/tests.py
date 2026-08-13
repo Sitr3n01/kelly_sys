@@ -455,3 +455,31 @@ def test_robots_txt_usa_o_host_da_request(client):
     response = client.get('/robots.txt', HTTP_HOST='kellyfarias.com.br')
 
     assert 'Sitemap: http://kellyfarias.com.br/sitemap.xml' in response.content.decode()
+
+
+# ── Tetos de upload de imagem: os dois caminhos não podem divergir ──────────
+
+
+def test_teto_de_upload_do_wagtail_casa_com_o_validador_legado(settings):
+    """WAGTAILIMAGES_MAX_UPLOAD_SIZE espelha validators.MAX_UPLOAD_BYTES.
+
+    O numero e repetido em config/settings/base.py porque settings e avaliado antes
+    do app registry — nao da para importar apps.common.validators la. Este teste e a
+    trava contra os dois valores divergirem em silencio, deixando o upload por
+    /cms/images/ mais permissivo que o dos campos legados.
+    """
+    from apps.common.validators import ALLOWED_IMAGE_EXTENSIONS, MAX_UPLOAD_BYTES
+
+    assert settings.WAGTAILIMAGES_MAX_UPLOAD_SIZE == MAX_UPLOAD_BYTES
+    assert set(settings.WAGTAILIMAGES_EXTENSIONS) == {
+        ext.lstrip('.') for ext in ALLOWED_IMAGE_EXTENSIONS
+    }
+
+
+def test_teto_de_pixels_fica_abaixo_do_default_do_wagtail(settings):
+    """O default do Wagtail e 128 MP — decode suficiente para derrubar o worker.
+
+    Ver wagtail/images/fields.py: sem a setting, um unico upload pode fazer o Pillow
+    alocar centenas de MB dentro de um container limitado a 1500M.
+    """
+    assert settings.WAGTAILIMAGES_MAX_IMAGE_PIXELS < 128 * 1_000_000

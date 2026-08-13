@@ -74,10 +74,17 @@ systemctl enable --now kellysys-approved-deploy.timer
 systemctl start kellysys-approved-deploy.service
 ```
 
-Crie tambem o timer de manutencao diaria. Ele limpa sessoes expiradas,
-atualiza estatisticas da tabela `django_session`, remove backups antigos,
-remove containers/imagens/build cache nao usados e limita o journal. Ele nunca
-executa `docker volume prune`.
+Crie tambem o timer de manutencao diaria. Ele limpa sessoes expiradas e codigos
+de verificacao vencidos, purga revisoes do Wagtail com mais de 30 dias, roda
+`VACUUM (ANALYZE)` em `django_session`, `django_cache` e `wagtailcore_revision`,
+remove backups antigos, remove containers/imagens/build cache nao usados e limita
+o journal. Ele nunca executa `docker volume prune`.
+
+`wagtailcore_revision` merece atencao: `Article` usa `RevisionMixin`, entao cada
+save grava um snapshot JSON inteiro. Sem a purga a tabela so cresce, e ela puxa
+junto o tempo do `pg_dump` e o working set do Postgres. O `purge_revisions`
+preserva `latest_revision`, publicacao agendada e revisao em workflow — rascunho
+nao se perde.
 
 ```bash
 cat >/etc/systemd/system/kellysys-maintenance.service <<'EOF'

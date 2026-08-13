@@ -278,7 +278,8 @@ O deploy local faz:
 
 - valida working tree limpo;
 - busca commit aprovado;
-- cria backup PostgreSQL gzipado em `/var/backups/kellysys/`;
+- cria backup PostgreSQL gzipado em `/var/backups/kellysys/` e **verifica**
+  (`gzip -t` + tamanho minimo) — dump corrompido aborta o deploy;
 - builda imagem web;
 - roda migrations;
 - roda `collectstatic --clear`;
