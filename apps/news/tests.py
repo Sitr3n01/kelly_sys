@@ -1279,6 +1279,9 @@ def test_sitemap_index_e_secao_respondem(client):
     index = client.get('/sitemap.xml')
     assert index.status_code == 200
     assert b'sitemap-news.xml' in index.content
+    # Cache no CDN, nao no DatabaseCache — ver o comentario em config/urls.py.
+    assert 'max-age=21600' in index['Cache-Control']
+    assert 'public' in index['Cache-Control']
 
     secao = client.get('/sitemap-news.xml')
     assert secao.status_code == 200
@@ -2852,3 +2855,27 @@ def test_view_count_ainda_deduplica_o_mesmo_leitor(client):
 
     art.refresh_from_db()
     assert art.view_count == 1
+
+
+@pytest.mark.django_db
+def test_sitemap_nao_cria_entrada_de_cache_por_query_string(client):
+    """Query string arbitrária no sitemap não pode inflar o `django_cache`.
+
+    `cache_page` chaveia por `build_absolute_uri()`, então `?x=1`, `?x=2`, ...
+    criariam uma linha por variação. Ao passar de MAX_ENTRIES, o cull do Django
+    apaga as chaves lexicograficamente menores — e `pwd_reset:*`, o rate limit de
+    recuperação de senha, ordena abaixo de `viewed:*`. Inundar o sitemap
+    despejaria um controle de segurança. Por isso o cache é só de header.
+    """
+    from django.core.cache import cache
+
+    site = make_site()
+    make_article(site, slug='sitemap-sem-cache')
+
+    cache.set('pwd_reset:code:ip:sentinela', 'nao-pode-sumir', timeout=600)
+
+    for i in range(30):
+        assert client.get('/sitemap.xml', {'x': i}).status_code == 200
+        assert client.get('/sitemap-news.xml', {'x': i}).status_code == 200
+
+    assert cache.get('pwd_reset:code:ip:sentinela') == 'nao-pode-sumir'

@@ -4,7 +4,7 @@ from django.contrib import admin
 from django.contrib.sitemaps.views import index as sitemap_index
 from django.contrib.sitemaps.views import sitemap
 from django.urls import include, path
-from django.views.decorators.cache import cache_page
+from django.views.decorators.cache import cache_control
 from django.views.generic import RedirectView
 from wagtail.admin import urls as wagtailadmin_urls
 from wagtail.documents import urls as wagtaildocs_urls
@@ -19,6 +19,20 @@ sitemaps = {
     'news': ArticleSitemap,
     'school': PageSitemap,
 }
+
+# Cache de 6h no CDN/Cloudflare, e deliberadamente NÃO no DatabaseCache.
+#
+# `cache_page` chaveia por `build_absolute_uri()`, query string incluída: cada
+# `/sitemap.xml?x=1`, `?x=2`, ... criaria uma linha nova em `django_cache`. Ao passar
+# de MAX_ENTRIES, o cull do Django apaga as chaves lexicograficamente MENORES
+# (`cache_key_culling_sql`) — e `pwd_reset:*`, o rate limit de recuperação de senha
+# (apps/accounts/verification.py), ordena abaixo de `viewed:*` e `views.decorators:*`.
+# Inundar o sitemap despejaria um controle de segurança.
+#
+# O header não tem esse problema: nada é armazenado do nosso lado. O conteúdo é
+# idêntico para todo visitante (SITE_ID fixo), e a única coisa que varia — o
+# Set-Cookie de quem está logado — o Cloudflare não guarda.
+cache_sitemap = cache_control(public=True, max_age=60 * 60 * 6)
 
 
 def _unified_login_shadows(prefix):
@@ -81,13 +95,11 @@ urlpatterns += [
     path('admin/', admin.site.urls),
     # Indice de sitemaps, e nao um XML unico: so assim o `limit` das classes vale.
     # O `name=` da rota de secao e obrigatorio — o index reverte exatamente esse
-    # nome para montar as URLs filhas. cache_page usa o DatabaseCache default
-    # (sem Redis, development_rules.md §4); o conteudo nao varia por host porque
-    # SITE_ID e fixo.
-    path('sitemap.xml', cache_page(60 * 60 * 6)(sitemap_index), {'sitemaps': sitemaps}, name='sitemap_index'),
+    # nome para montar as URLs filhas.
+    path('sitemap.xml', cache_sitemap(sitemap_index), {'sitemaps': sitemaps}, name='sitemap_index'),
     path(
         'sitemap-<section>.xml',
-        cache_page(60 * 60 * 6)(sitemap),
+        cache_sitemap(sitemap),
         {'sitemaps': sitemaps},
         name='django.contrib.sitemaps.views.sitemap',
     ),
