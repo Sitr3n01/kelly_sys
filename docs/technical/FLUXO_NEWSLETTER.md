@@ -129,7 +129,7 @@ python manage.py send_pending_newsletters --batch-size 500
 | `--retry-failed` | Inclui entregas com falha na tentativa |
 | `--dry-run` | Não envia, não grava — só mostra o que faria |
 
-**Operação típica em produção:** agendar o comando em cron (ex.: a cada 5–10 min). Cada execução drena um lote; o `batch_size` evita prender o processo enviando milhares de uma vez.
+**Operação típica em produção:** agendar o comando em cron (hoje a cada 15 min, junto do `publish_scheduled` — ver [DEPLOY.md](DEPLOY.md) §7). Cada execução drena um lote; o `batch_size` evita prender o processo enviando milhares de uma vez.
 
 ### Opção B — Ação no admin (envio manual pontual)
 Em **Artigos**, selecione os publicados → ação **"Enviar Newsletter para inscritos"**. Internamente chama `process_article_newsletter(article, retry_failed=True, include_marked_sent=True)` para cada um e reporta `enviadas / falhas / ignoradas`. Permite **reenvio manual** mesmo de artigos já marcados como concluídos.

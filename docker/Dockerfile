@@ -43,9 +43,11 @@ USER appuser
 EXPOSE 8000
 
 # Liveness probe. /healthz/ é isento de redirect HTTPS (ver config/settings/production.py).
-HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 \
+HEALTHCHECK --interval=60s --timeout=5s --start-period=20s --retries=3 \
     CMD python -c "import sys, urllib.request; sys.exit(0 if urllib.request.urlopen('http://127.0.0.1:8000/healthz/', timeout=4).status == 200 else 1)"
 
-# --max-requests/-jitter reciclam o worker (~1000±200 req) e devolvem memória ao SO.
-# Access log HTTP fica no nginx/Cloudflare; Gunicorn mantem apenas erros no stderr.
-CMD ["gunicorn", "config.wsgi:application", "--bind", "0.0.0.0:8000", "--workers", "3", "--threads", "2", "--max-requests", "1000", "--max-requests-jitter", "200", "--error-logfile", "-"]
+# Espelha o `command` de docker/docker-compose.prod.yml — a justificativa de cada flag
+# está nos comentários de lá. --preload compartilha o grafo de imports (Django+Wagtail)
+# entre os workers via copy-on-write; --max-requests/-jitter reciclam o worker e
+# devolvem memória ao SO.
+CMD ["gunicorn", "config.wsgi:application", "--bind", "0.0.0.0:8000", "--workers", "2", "--threads", "4", "--preload", "--max-requests", "800", "--max-requests-jitter", "200", "--timeout", "60", "--graceful-timeout", "30", "--error-logfile", "-"]

@@ -290,17 +290,29 @@ O deploy local faz:
 
 ## 7. Rotinas Operacionais
 
-Newsletter pendente:
+Publicação agendada (Wagtail — artigos com `go_live_at`) e newsletter pendente
+rodam na mesma entrada, nessa ordem — publicar é o que enfileira a newsletter:
 
 ```cron
-*/5 * * * * docker compose -p kellysys -f /opt/kelly_sys/docker/docker-compose.prod.yml exec -T web python manage.py send_pending_newsletters --batch-size 100
+*/15 * * * * flock -n /var/lock/kellysys-cron.lock docker compose -p kellysys -f /opt/kelly_sys/docker/docker-compose.prod.yml run --rm --no-deps web sh -c 'python manage.py publish_scheduled; python manage.py send_pending_newsletters --batch-size 100' 2>&1 | logger -t kellysys-cron
 ```
 
-Publicação agendada (Wagtail — artigos com go_live_at):
+Três detalhes não são cosméticos:
 
-```cron
-*/5 * * * * docker compose -p kellysys -f /opt/kelly_sys/docker/docker-compose.prod.yml exec -T web python manage.py publish_scheduled
-```
+- **`run --rm --no-deps`, não `exec -T`.** Com `exec`, o `manage.py` sobe um
+  Django+Wagtail inteiro (~150–250 MB) **dentro** do container `web`, disputando o
+  teto de 1500M com os workers do Gunicorn — caminho direto para OOM kill. Com
+  `run`, o processo tem contabilidade de memória própria. O `--no-deps` evita
+  reiniciar o `db`. Containers que vazem já são recolhidos pelo
+  `docker container prune --filter until=24h` do `kellysys-maintenance`.
+- **`flock`.** Sem ele, uma execução que passe da janela empilha com a seguinte.
+- **`| logger -t kellysys-cron`.** A saída vai para o journald, que o
+  `kellysys-maintenance` já limita com `journalctl --vacuum-time=14d`, em vez de um
+  arquivo que cresce sem rotação. Leia com `journalctl -t kellysys-cron`.
+
+A janela de 15 min é o atraso máximo de uma publicação agendada. Se precisar de
+mais precisão, baixe para `*/5` — o custo agora é um container curto, não pressão
+no `web`.
 
 Manutenção diária preferencial:
 

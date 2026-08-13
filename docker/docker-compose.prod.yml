@@ -26,12 +26,19 @@ services:
     build:
       context: ..
       dockerfile: docker/Dockerfile
-    # --max-requests/-jitter: cada worker é reciclado a ~1000±200 requests, devolvendo
+    # --max-requests/-jitter: cada worker é reciclado a ~800±200 requests, devolvendo
     # memória ao SO e impedindo o crescimento monotônico de RSS (causa nº 1 de "memória
-    # sempre subindo" em gunicorn). --workers: usar (2×núcleos)+1; em 1 vCPU = 3.
+    # sempre subindo" em gunicorn).
+    # --workers 2 --threads 4: a regra (2×núcleos)+1 vale para carga CPU-bound; esta é
+    # IO/DB-bound atrás do nginx, então as threads carregam a concorrência mais barato
+    # que processos. Em 1 vCPU o terceiro worker só somava RSS.
+    # --preload: carrega a aplicação antes do fork, de modo que os workers compartilhem
+    # o interpretador e o registry do Django por copy-on-write. Com Wagtail no grafo de
+    # imports isso vale centenas de MB. Só desabilita reload por HUP, que este deploy
+    # não usa — kellysys-deploy recria o container com --force-recreate.
     # O access log HTTP fica no nginx/Cloudflare; Gunicorn mantem apenas erros no
     # stderr para evitar log duplicado em stdout.
-    command: gunicorn config.wsgi:application --bind 0.0.0.0:8000 --workers 3 --threads 2 --max-requests 1000 --max-requests-jitter 200 --error-logfile -
+    command: gunicorn config.wsgi:application --bind 0.0.0.0:8000 --workers 2 --threads 4 --preload --max-requests 800 --max-requests-jitter 200 --timeout 60 --graceful-timeout 30 --error-logfile -
     volumes:
       - static_volume:/app/staticfiles
       - media_volume:/app/media
