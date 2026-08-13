@@ -23,6 +23,12 @@ env/
 db.sqlite3*
 media/
 
+# Dumps do PostgreSQL. Cinto e suspensório: o kellysys-deploy já grava em
+# /var/backups/kellysys, fora do build context — isto protege instalações que ainda
+# tenham o diretório antigo em /opt/kelly_sys/backups. Sem isto, o `COPY . .` do
+# Dockerfile embute 30 dias de dumps em cada imagem.
+backups/
+
 # Estáticos compilados (regenerados via collectstatic no build)
 staticfiles/
 

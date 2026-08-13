@@ -264,7 +264,7 @@ sudo /usr/local/sbin/kellysys-deploy
 > Antes de qualquer coisa, tenha **dois** backups em mão: o dump do PostgreSQL e uma
 > cópia do diretório `media/`. O dump sozinho não recupera nada se os arquivos de
 > imagem se perderem — a `cms_media.Image` aponta para arquivo em disco. O deploy
-> aprovado já cria o dump em `/opt/kelly_sys/backups/`, mas neste release confira à
+> aprovado já cria o dump em `/var/backups/kellysys/`, mas neste release confira à
 > mão que ele existe e não está vazio.
 
 1. Abra/mergeie mudança em `master`.
@@ -278,7 +278,7 @@ O deploy local faz:
 
 - valida working tree limpo;
 - busca commit aprovado;
-- cria backup PostgreSQL gzipado em `/opt/kelly_sys/backups/`;
+- cria backup PostgreSQL gzipado em `/var/backups/kellysys/`;
 - builda imagem web;
 - roda migrations;
 - roda `collectstatic --clear`;

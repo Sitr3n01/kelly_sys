@@ -47,6 +47,9 @@ desktop.ini
 # Docker
 docker/postgres_data/
 
+# Dumps do PostgreSQL gerados pelo deploy (hoje em /var/backups/kellysys)
+backups/
+
 # Virtual env
 venv/
 .venv/
