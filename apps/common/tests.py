@@ -526,7 +526,7 @@ def test_scan_orphan_media_nao_marca_arquivo_citado_no_html_legado(settings, tmp
 
     assert 'citada-no-html.jpg' not in texto, 'imagem do HTML legado foi marcada como órfã'
     assert 'ninguem-usa.png' in texto
-    assert 'Referências embutidas em content/body: 1' in texto
+    assert 'Referências embutidas em texto: 1' in texto
 
 
 @pytest.mark.django_db
@@ -566,3 +566,66 @@ def test_scan_orphan_media_ignora_dotfiles(settings, tmp_path):
     call_command('scan_orphan_media', stdout=saida)
 
     assert 'Nenhum órfão' in saida.getvalue()
+
+
+@pytest.mark.django_db
+def test_scan_orphan_media_enxerga_referencia_em_pagina_da_escola(settings, tmp_path, current_site):
+    """Imagem citada só em school.Page.content não pode virar órfã.
+
+    Era o furo da primeira versão do comando: ela varria apenas
+    `Article.content` e `Article.body`, então uma imagem em uso numa página da
+    escola — TextField com HTML sanitizado, mesmo caso do `content` legado do
+    artigo — aparecia como órfã e seria removida.
+    """
+    from io import StringIO
+
+    from django.core.management import call_command
+
+    from apps.school.models import Page
+
+    settings.MEDIA_ROOT = str(tmp_path)
+    _escreve(tmp_path, 'school/pages/usada-na-escola.jpg')
+    _escreve(tmp_path, 'school/pages/ninguem-usa.jpg')
+
+    Page.objects.create(
+        site=current_site, title='Cursos', slug='cursos-scan', is_published=True,
+        content='<p>texto</p><img src="/media/school/pages/usada-na-escola.jpg">',
+    )
+
+    saida = StringIO()
+    call_command('scan_orphan_media', stdout=saida)
+    texto = saida.getvalue()
+
+    assert 'usada-na-escola.jpg' not in texto, 'imagem de página da escola foi marcada como órfã'
+    assert 'ninguem-usa.jpg' in texto
+
+
+@pytest.mark.django_db
+def test_scan_orphan_media_enxerga_referencia_no_streamfield(settings, tmp_path, current_site):
+    """Imagem citada só no StreamField do artigo também conta como em uso.
+
+    Trava da detecção por `get_internal_type()`: o StreamField do Wagtail herda
+    direto de `models.Field` — não de TextField nem de JSONField — mas se declara
+    como JSONField no banco. Detectar por `isinstance` perderia `Article.body`.
+    """
+    from io import StringIO
+
+    from django.core.management import call_command
+
+    from apps.news.models import Article
+
+    settings.MEDIA_ROOT = str(tmp_path)
+    _escreve(tmp_path, 'news/articles/dentro-do-streamfield.jpg')
+
+    Article.objects.create(
+        title='Artigo com StreamField', slug='streamfield-scan',
+        site=current_site, status=Article.Status.PUBLISHED,
+        body=[
+            {'type': 'texto', 'value': '<p><img src="/media/news/articles/dentro-do-streamfield.jpg"></p>'},
+        ],
+    )
+
+    saida = StringIO()
+    call_command('scan_orphan_media', stdout=saida)
+
+    assert 'dentro-do-streamfield.jpg' not in saida.getvalue()

@@ -1,10 +1,10 @@
 """Relatório somente-leitura de arquivos órfãos em MEDIA_ROOT.
 
-Existe porque nenhuma varredura ingênua é segura neste projeto: além dos 17
-campos de arquivo espalhados pelos models, o HTML legado de ``Article.content``
-e o JSON de ``Article.body`` embutem caminhos ``/media/...`` que **nenhuma
-chave estrangeira rastreia**. Apagar por FK sozinho quebraria imagem de artigo
-publicado.
+Existe porque nenhuma varredura ingênua é segura neste projeto: além dos campos
+de arquivo espalhados pelos models, vários campos de texto embutem caminhos
+``/media/...`` que **nenhuma chave estrangeira rastreia** — o HTML legado de
+``Article.content``, o StreamField ``Article.body`` e o ``school.Page.content``.
+Apagar por FK sozinho quebraria imagem de página publicada.
 
 Por isso o comando nunca apaga. Ele classifica:
 
@@ -32,6 +32,11 @@ CAMINHO_EMBUTIDO = re.compile('/media/([A-Za-z0-9._/-]+)')
 
 ORIGINAIS_WAGTAIL = 'original_images/'
 
+# `get_internal_type()` e nao `isinstance`: o StreamField do Wagtail herda direto de
+# `models.Field` — nao de TextField nem de JSONField — mas se declara como JSONField no
+# banco. Um `isinstance(f, models.JSONField)` perderia `Article.body`.
+TIPOS_DE_TEXTO = {'TextField', 'JSONField'}
+
 
 class Command(BaseCommand):
     help = 'Relata arquivos em MEDIA_ROOT sem referência no banco. Nunca apaga nada.'
@@ -49,7 +54,7 @@ class Command(BaseCommand):
             return
 
         referenciados, campos = self._referenciados_por_campo()
-        embutidos = self._referenciados_em_texto(referenciados)
+        embutidos, campos_de_texto = self._referenciados_em_texto(referenciados)
 
         em_disco = {
             str(p.relative_to(media_root)).replace(os.sep, '/')
@@ -65,7 +70,8 @@ class Command(BaseCommand):
 
         self.stdout.write(f'MEDIA_ROOT: {media_root}')
         self.stdout.write(f'Campos de arquivo varridos: {len(campos)}')
-        self.stdout.write(f'Referências embutidas em content/body: {embutidos}')
+        self.stdout.write(f'Campos de texto varridos: {campos_de_texto}')
+        self.stdout.write(f'Referências embutidas em texto: {embutidos}')
         self.stdout.write('')
         self.stdout.write(f'Arquivos em disco: {len(em_disco)}')
         self.stdout.write(f'Referenciados:     {len(referenciados & em_disco)}')
@@ -108,14 +114,38 @@ class Command(BaseCommand):
         return referenciados, campos_vistos
 
     def _referenciados_em_texto(self, referenciados):
-        """Caminhos embutidos no HTML legado e no StreamField, que não têm FK."""
-        article = apps.get_model('news', 'Article')
+        """Caminhos ``/media/...`` embutidos em texto, que nenhuma FK rastreia.
+
+        Varre TODO campo de texto de TODO model. A primeira versão deste comando
+        olhava apenas ``Article.content`` e ``Article.body``, e por isso reportava
+        como órfã uma imagem citada em ``school.Page.content`` — que é TextField com
+        HTML sanitizado, exatamente o mesmo caso do ``content`` legado do artigo.
+
+        Deliberadamente abrangente: uma referência a mais só faz deixar de reportar
+        um órfão, enquanto uma a menos manda apagar arquivo em uso. Por isso entram
+        também os snapshots de ``wagtailcore.Revision.content`` — a imagem de uma
+        revisão restaurável ainda está em uso.
+        """
         total = 0
-        for content, body in article.objects.values_list('content', 'body'):
-            for campo in (content, body):
-                if not campo:
-                    continue
-                for achado in CAMINHO_EMBUTIDO.findall(str(campo)):
-                    referenciados.add(achado)
-                    total += 1
-        return total
+        campos_varridos = 0
+        for model in apps.get_models():
+            if model._meta.proxy:
+                continue
+            campos = [
+                f.name for f in model._meta.concrete_fields
+                if f.get_internal_type() in TIPOS_DE_TEXTO
+            ]
+            if not campos:
+                continue
+            campos_varridos += len(campos)
+            linhas = model._default_manager.values_list(*campos).iterator(chunk_size=200)
+            for linha in linhas:
+                if not isinstance(linha, tuple):
+                    linha = (linha,)
+                for valor in linha:
+                    if not valor:
+                        continue
+                    for achado in CAMINHO_EMBUTIDO.findall(str(valor)):
+                        referenciados.add(achado)
+                        total += 1
+        return total, campos_varridos
