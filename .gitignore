@@ -50,6 +50,16 @@ docker/postgres_data/
 # Dumps do PostgreSQL gerados pelo deploy (hoje em /var/backups/kellysys)
 backups/
 
+# Material de chave — nunca commitar, nunca entrar na imagem
+*.pem
+*.key
+*_ed25519
+*_ed25519.pub
+*_rsa
+*_rsa.pub
+id_rsa*
+id_ed25519*
+
 # Virtual env
 venv/
 .venv/

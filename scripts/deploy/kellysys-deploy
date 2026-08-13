@@ -155,7 +155,12 @@ log "Running healthchecks"
 wait_for_http_status "komuniki.com.br" "/healthz/" "301,302"
 wait_for_http_status "www.komuniki.com.br" "/healthz/" "301,302"
 wait_for_https_status "komuniki.com.br" "/healthz/" "200"
-wait_for_https_status "www.komuniki.com.br" "/healthz/" "200"
+# 301, e nao 200: docker/nginx/nginx.conf tem um server block em 443 so para
+# `www.komuniki.com.br www.kellyfarias.com.br` que faz `return 301` para o apex.
+# Exigir 200 aqui era impossivel de satisfazer — o deploy morria sempre nesta linha,
+# e com o script antigo o timer recomecava tudo a cada minuto. As linhas de
+# kellyfarias abaixo ja aceitavam o redirect; esta ficou para tras.
+wait_for_https_status "www.komuniki.com.br" "/healthz/" "301,302"
 wait_for_https_status "kellyfarias.com.br" "/news/" "200,301,302"
 wait_for_https_status "www.kellyfarias.com.br" "/news/" "200,301,302"
 wait_for_https_status "kellyfarias.com.br" "/" "301,302"
