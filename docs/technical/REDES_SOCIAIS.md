@@ -65,8 +65,27 @@ Comportamento esperado:
 ## Cron Sugerido
 
 ```cron
-*/30 * * * * docker compose -p kellysys -f /opt/kelly_sys/docker/docker-compose.prod.yml exec -T web python manage.py sync_social_posts >> /var/log/social_sync.log 2>&1
+0 */2 * * * flock -n /var/lock/kellysys-social.lock docker compose -p kellysys -f /opt/kelly_sys/docker/docker-compose.prod.yml run --rm --no-deps web python manage.py sync_social_posts 2>&1 | logger -t kellysys-social
 ```
+
+Leia a saída com:
+
+```bash
+journalctl -t kellysys-social -n 50 --no-pager
+```
+
+Mudou em relação à versão anterior, e cada mudança tem motivo:
+
+- **`run --rm --no-deps` em vez de `exec -T`** — com `exec`, o `manage.py` sobe um
+  Django+Wagtail inteiro dentro do container `web`, disputando o teto de 1500M com
+  os workers do Gunicorn. Ver [DEPLOY.md](DEPLOY.md) §7.
+- **`| logger` em vez de `>> /var/log/social_sync.log`** — o arquivo antigo não tinha
+  rotação e crescia sem limite; o `journalctl --vacuum-time=14d` do
+  `kellysys-maintenance` não alcança arquivo solto. Ao migrar, remova o resíduo:
+  `sudo rm -f /var/log/social_sync.log`.
+- **`0 */2` em vez de `*/30`** — as APIs mudam pouco em 30 minutos e a sincronia
+  passou a custar um container por execução.
+- **`flock`** — impede empilhar execuções quando uma API está lenta.
 
 ## Segurança
 

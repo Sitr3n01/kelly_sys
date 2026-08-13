@@ -1,6 +1,6 @@
 """Sincroniza posts das contas de redes sociais ativas com as APIs oficiais.
 
-Uso típico (cron a cada 30 min):
+Uso típico (cron a cada 2h — ver docs/technical/REDES_SOCIAIS.md):
     python manage.py sync_social_posts
 
 Sem credenciais reais, registra um erro amigável por conta e segue — nunca quebra,
