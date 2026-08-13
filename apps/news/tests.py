@@ -2781,3 +2781,38 @@ def test_busca_nao_duplica_artigo_com_varias_tags_casando(client):
     response = client.get(reverse('news:search'), {'q': 'Pantanal'})
 
     assert list(response.context['page_obj']) == [art]
+
+
+@pytest.mark.django_db
+def test_busca_nao_vaza_rascunho_por_nenhum_dos_caminhos(client, django_user_model):
+    """Trava de seguranca: a subquery precisa manter o escopo de status.
+
+    A reestruturacao moveu tag/categoria/autor para um `pk__in`. Se aquele filtro
+    interno perdesse `status=PUBLISHED`, um rascunho passaria a aparecer na busca
+    publica por tag, categoria ou nome do autor — vazamento de conteudo nao
+    publicado.
+    """
+    site = make_site()
+    categoria = Category.objects.create(name='Draftcategoria', slug='draftcategoria')
+    autor = django_user_model.objects.create_user(
+        username='rascunhista', password='x', first_name='Draftnome', last_name='Draftsobrenome',
+    )
+
+    rascunho = make_article(site, slug='rascunho-secreto', status=Article.Status.DRAFT)
+    rascunho.title = 'Draftitulo confidencial'
+    rascunho.excerpt = 'Draftresumo confidencial'
+    rascunho.content = 'Draftcorpo confidencial'
+    rascunho.category = categoria
+    rascunho.author = autor
+    rascunho.save()
+    rascunho.tags.add(Tag.objects.create(name='Drafttag', slug='drafttag'))
+    rascunho.save()
+
+    for termo in (
+        'Draftitulo', 'Draftresumo', 'Draftcorpo',
+        'Drafttag', 'Draftcategoria', 'Draftnome', 'Draftsobrenome',
+    ):
+        response = client.get(reverse('news:search'), {'q': termo})
+        assert response.status_code == 200
+        assert list(response.context['page_obj']) == [], f'rascunho vazou na busca por {termo}'
+        assert 'Draftitulo confidencial' not in response.content.decode()
