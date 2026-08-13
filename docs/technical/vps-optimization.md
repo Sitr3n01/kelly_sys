@@ -11,6 +11,7 @@ proximo incidente comecar por evidencia, nao por palpite.
 
 | Sinal | Causa |
 |---|---|
+| Deploy chega ao fim e morre em `Healthcheck failed: ... expected 200, got 301` | Expectativa do healthcheck em desacordo com o nginx. Os hosts `www.*` tem server block proprio em 443 que faz `return 301` para o apex — a expectativa correta e `301,302`, nao `200` |
 | `last-approved-sha` ausente/desatualizado e dezenas de "Deploying approved commit" por dia | Deploy em loop de retry. Corrigido pela trava `.attempt` em `kellysys-deploy-approved`; ver [secure-deploy.md](secure-deploy.md) §2.1 |
 | Numero de dumps muito maior que o de deploys aprovados | O mesmo loop, visto pelo disco |
 | Imagens `kellysys-web` cada uma maior que a anterior | Dumps entrando na imagem pelo build context. Corrigido movendo `BACKUP_DIR` para `/var/backups/kellysys` e adicionando `backups/` ao `.dockerignore` |
