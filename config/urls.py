@@ -1,15 +1,17 @@
 from django.conf import settings
 from django.conf.urls.static import static
 from django.contrib import admin
+from django.contrib.sitemaps.views import index as sitemap_index
 from django.contrib.sitemaps.views import sitemap
 from django.urls import include, path
+from django.views.decorators.cache import cache_page
 from django.views.generic import RedirectView
 from wagtail.admin import urls as wagtailadmin_urls
 from wagtail.documents import urls as wagtaildocs_urls
 
 from apps.accounts import panel_views
 from apps.common import admin_guides
-from apps.common.views import health_check
+from apps.common.views import health_check, robots_txt
 from apps.news.sitemaps import ArticleSitemap
 from apps.school.sitemaps import PageSitemap
 
@@ -46,6 +48,7 @@ def _unified_login_shadows(prefix):
 
 urlpatterns = [
     path('healthz/', health_check, name='healthz'),
+    path('robots.txt', robots_txt, name='robots_txt'),
     path('i18n/', include('django.conf.urls.i18n')),
     # Acesso administrativo unificado (/entrar/, /sair/, /painel/, /sem-acesso/).
     path('', include('apps.accounts.urls_panel', namespace='panel')),
@@ -76,7 +79,18 @@ urlpatterns += [
         name='admin_management_guide',
     ),
     path('admin/', admin.site.urls),
-    path('sitemap.xml', sitemap, {'sitemaps': sitemaps}, name='django.contrib.sitemaps.views.sitemap'),
+    # Indice de sitemaps, e nao um XML unico: so assim o `limit` das classes vale.
+    # O `name=` da rota de secao e obrigatorio — o index reverte exatamente esse
+    # nome para montar as URLs filhas. cache_page usa o DatabaseCache default
+    # (sem Redis, development_rules.md §4); o conteudo nao varia por host porque
+    # SITE_ID e fixo.
+    path('sitemap.xml', cache_page(60 * 60 * 6)(sitemap_index), {'sitemaps': sitemaps}, name='sitemap_index'),
+    path(
+        'sitemap-<section>.xml',
+        cache_page(60 * 60 * 6)(sitemap),
+        {'sitemaps': sitemaps},
+        name='django.contrib.sitemaps.views.sitemap',
+    ),
     path('hiring/', include('apps.hiring.urls', namespace='hiring')),
     path('contact/', include('apps.contact.urls', namespace='contact')),
     path('news/', include('apps.news.urls', namespace='news')),

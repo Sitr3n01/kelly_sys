@@ -1,0 +1,28 @@
+User-agent: *
+Crawl-delay: 10
+
+# Busca: cada consulta vira ILIKE '%...%' sobre o corpo dos artigos, sem indice
+# possivel. Manter crawler fora daqui e o maior ganho de CPU do portal.
+Disallow: /news/search/
+
+# Fragmentos HTMX: pedacos de listagem, nao paginas.
+Disallow: /news/htmx/
+
+# Area logada e acoes de usuario.
+Disallow: /news/account/
+Disallow: /news/toggle-bookmark/
+Disallow: /news/toggle-like/
+Disallow: /news/comment/
+Disallow: /news/delete-comment/
+Disallow: /news/newsletter/
+Disallow: /accounts/
+
+# Paineis administrativos.
+Disallow: /admin/
+Disallow: /cms/
+Disallow: /entrar/
+Disallow: /sair/
+Disallow: /painel/
+Disallow: /sem-acesso/
+
+Sitemap: {{ request.scheme }}://{{ request.get_host }}/sitemap.xml

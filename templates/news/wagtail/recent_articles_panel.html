@@ -29,8 +29,8 @@
                     {% for article in articles %}
                         <tr>
                             <td class="redacao-recent-articles__thumb">
-                                {% if article.cover_image_url %}
-                                    <img src="{{ article.cover_image_url }}" alt="" class="redacao-recent-articles__thumb-img" />
+                                {% if article.card_image_url %}
+                                    <img src="{{ article.card_image_url }}" alt="" class="redacao-recent-articles__thumb-img" />
                                 {% endif %}
                             </td>
                             <td class="title">

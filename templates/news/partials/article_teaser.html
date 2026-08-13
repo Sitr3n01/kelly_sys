@@ -1,9 +1,9 @@
 <article class="flex flex-col gap-4 group cursor-pointer">
     <a href="{% url 'news:article_detail' article.slug %}" class="block">
         <div class="w-full aspect-[3/2] overflow-hidden rounded-lg bg-gray-100 dark:bg-gray-800 mb-2">
-            {% if article.has_cover_image %}
+            {% if article.has_card_image %}
             <div class="w-full h-full bg-cover bg-center transition-transform duration-500 group-hover:scale-105"
-                style="background-image: url('{{ article.cover_image_url }}');">
+                style="background-image: url('{{ article.card_image_url }}');">
             </div>
             {% else %}
             <div class="w-full h-full bg-slate-200 dark:bg-slate-800 flex items-center justify-center">

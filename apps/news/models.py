@@ -157,6 +157,12 @@ class Article(PreviewableMixin, WorkflowMixin, DraftStateMixin, LockableMixin, R
         constraints = [
             models.UniqueConstraint(fields=['site', 'slug'], name='unique_article_slug_per_site'),
         ]
+        indexes = [
+            # Toda listagem publica filtra site + status e ordena por -published_at:
+            # home, categoria, tag, autor, arquivo e busca. Um indice composto cobre
+            # as seis de uma vez, incluindo o ORDER BY.
+            models.Index(fields=['site', 'status', '-published_at'], name='news_article_site_status_pub'),
+        ]
 
     def __str__(self):
         return self.title
@@ -264,9 +270,40 @@ class Article(PreviewableMixin, WorkflowMixin, DraftStateMixin, LockableMixin, R
             return self.featured_image.url
         return ''
 
+    @cached_property
+    def card_image_url(self):
+        """URL da capa no tamanho de card de listagem.
+
+        `cover_image_url` gera `max-1600x1600`, correto para o herói do artigo e para
+        as metatags OG/Twitter. Numa grade de 12 cards é desperdício duplo: o
+        navegador baixa muito mais bytes do que renderiza, e toda rendition ainda não
+        gerada faz o Pillow decodificar 1600 px dentro do worker do Gunicorn — onde o
+        pico de RSS raramente volta ao SO, que é a assinatura de "memória sempre
+        subindo".
+
+        `fill-600x400` casa com o `aspect-[3/2]` dos cards de listagem.
+        """
+        if self.featured_image_wagtail_id:
+            try:
+                return self.featured_image_wagtail.get_rendition('fill-600x400').url
+            except Exception:
+                logger.warning('Falha ao gerar rendition de card para article #%s', self.pk, exc_info=True)
+        if self.featured_image:
+            return self.featured_image.url
+        return ''
+
     @property
     def has_cover_image(self):
         return bool(self.cover_image_url)
+
+    @property
+    def has_card_image(self):
+        """Par de `card_image_url`, pelo mesmo motivo que `has_cover_image` existe.
+
+        Checar `has_cover_image` num template de listagem já disparava a rendition de
+        1600 px — a checagem e a URL precisam andar juntas.
+        """
+        return bool(self.card_image_url)
 
 
 class NewsletterSubscription(TimeStampedModel):

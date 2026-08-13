@@ -16,11 +16,11 @@
             </div>
         </a>
     </div>
-    {% if article.has_cover_image %}
+    {% if article.has_card_image %}
     <a href="{% url 'news:article_detail' article.slug %}"
         class="w-full md:w-48 aspect-video rounded bg-gray-100 dark:bg-gray-800 overflow-hidden block">
         <div class="w-full h-full bg-cover bg-center grayscale opacity-80 group-hover:grayscale-0 group-hover:opacity-100 transition-all"
-            style="background-image: url('{{ article.cover_image_url }}');">
+            style="background-image: url('{{ article.card_image_url }}');">
         </div>
     </a>
     {% endif %}

@@ -1236,6 +1236,73 @@ def test_sitemap_items_and_lastmod():
 
 
 @pytest.mark.django_db
+def test_sitemap_tem_limite_por_pagina():
+    """ArticleSitemap pagina em 1000.
+
+    Sem `limit`, o default do Django e 50.000 e cada request materializava esse
+    tanto de Article completo — com `content` e `body` — na RAM do worker.
+    """
+    from apps.news.sitemaps import ArticleSitemap
+
+    assert ArticleSitemap.limit == 1000
+
+
+@pytest.mark.django_db
+def test_sitemap_latest_lastmod_nao_materializa_queryset(django_assert_num_queries):
+    """get_latest_lastmod resolve por aggregate, nao iterando os items.
+
+    A implementacao base do Django faz max([lastmod(i) for i in items()]), o que
+    desfaz a protecao do `limit` justamente ao montar o indice.
+    """
+    site = make_site()
+    art = Article.objects.create(
+        title='Artigo Lastmod', slug='lastmod-test',
+        content='Conteúdo.', site=site,
+        status=Article.Status.PUBLISHED, published_at=timezone.now(),
+    )
+    from apps.news.sitemaps import ArticleSitemap
+
+    with django_assert_num_queries(1):
+        assert ArticleSitemap().get_latest_lastmod() == art.updated_at
+
+
+@pytest.mark.django_db
+def test_sitemap_index_e_secao_respondem(client):
+    """/sitemap.xml e um indice e /sitemap-news.xml traz a URL do artigo."""
+    site = make_site()
+    art = Article.objects.create(
+        title='Artigo Index', slug='index-test',
+        content='Conteúdo.', site=site,
+        status=Article.Status.PUBLISHED, published_at=timezone.now(),
+    )
+
+    index = client.get('/sitemap.xml')
+    assert index.status_code == 200
+    assert b'sitemap-news.xml' in index.content
+
+    secao = client.get('/sitemap-news.xml')
+    assert secao.status_code == 200
+    assert art.get_absolute_url().encode() in secao.content
+
+
+@pytest.mark.django_db
+def test_sitemap_nao_quebra_com_pagina_da_escola_publicada(client):
+    """Regressao: PageSitemap sem location() derrubava /sitemap.xml.
+
+    school.Page nao define get_absolute_url e o default de Sitemap.location chama
+    exatamente isso, entao qualquer pagina publicada virava AttributeError -> 500.
+    """
+    from apps.school.models import Page
+
+    site = make_site()
+    pagina = Page.objects.create(site=site, title='Sobre', slug='sobre-sitemap', is_published=True)
+
+    secao = client.get('/sitemap-school.xml')
+    assert secao.status_code == 200
+    assert f'/{pagina.slug}/'.encode() in secao.content
+
+
+@pytest.mark.django_db
 def test_latest_articles_feed_title_and_items(client):
     """LatestArticlesFeed tem título, descrição e items publicados."""
     site = make_site(pk=1, domain='testserver')
@@ -2525,3 +2592,192 @@ def test_legacy_conversion_groups_by_article_preserving_order():
 
     assert set(grouped) == {1, 2}
     assert [b['order'] for b in grouped[1]] == [0, 1]
+
+
+# ── view_count: dedup sem inchar django_session ─────────────────────────────
+
+
+@pytest.mark.django_db
+def test_view_count_conta_uma_vez_e_nao_cria_sessao(client):
+    """Duas leituras seguidas contam uma vez, e sem gravar linha em django_session.
+
+    O marcador de "ja vi este artigo" ficava na sessao. Com sessao em banco e
+    SESSION_SAVE_EVERY_REQUEST=True, era o unico motivo de trafego anonimo tocar
+    django_session — cada crawler criava uma linha por artigo lido. Hoje o dedup
+    vive no cache, com expiracao propria.
+    """
+    from django.contrib.sessions.models import Session
+
+    site = make_site()
+    art = make_article(site, slug='contagem-de-leitura')
+
+    client.get(art.get_absolute_url())
+    client.get(art.get_absolute_url())
+
+    art.refresh_from_db()
+    assert art.view_count == 1
+    assert Session.objects.count() == 0
+
+
+@pytest.mark.django_db
+def test_view_count_volta_a_contar_quando_a_chave_de_dedup_expira(client):
+    """Leitores distintos (ou a mesma pessoa depois da janela) contam de novo."""
+    from django.core.cache import cache
+
+    site = make_site()
+    art = make_article(site, slug='contagem-expira')
+
+    client.get(art.get_absolute_url())
+    cache.clear()
+    client.get(art.get_absolute_url())
+
+    art.refresh_from_db()
+    assert art.view_count == 2
+
+
+# ── card_image_url: rendition de listagem separada da de herói ──────────────
+
+
+@pytest.mark.django_db
+def test_card_image_url_usa_rendition_menor_que_a_capa(settings, tmp_path):
+    """Card e herói geram renditions diferentes a partir da mesma imagem.
+
+    `cover_image_url` continua em `max-1600x1600` — certo para o herói e para as
+    metatags OG/Twitter. Os cards passam a `fill-600x400`: numa grade de 12, a
+    rendition de 1600 px fazia o Pillow decodificar dentro do worker do Gunicorn e
+    o navegador baixar muito mais bytes do que renderiza.
+    """
+    settings.MEDIA_ROOT = str(tmp_path)
+    from io import BytesIO
+
+    from django.core.files.base import ContentFile
+    from PIL import Image as PILImage
+    from wagtail.images import get_image_model
+
+    site = make_site()
+    article = make_article(site, slug='card-rendition')
+
+    image_model = get_image_model()
+    buf = BytesIO()
+    PILImage.new('RGB', (1600, 1200), (30, 90, 180)).save(buf, format='PNG')
+    buf.seek(0)
+    img = image_model.objects.create(
+        title='Capa grande',
+        file=ContentFile(buf.read(), name='capa-grande.png'),
+        width=1600,
+        height=1200,
+        file_size=buf.tell(),
+    )
+    article.featured_image_wagtail = img
+    article.save(update_fields=['featured_image_wagtail'])
+
+    assert article.has_card_image is True
+    assert article.card_image_url != ''
+    assert article.card_image_url != article.cover_image_url
+
+    specs = set(img.renditions.values_list('filter_spec', flat=True))
+    assert 'fill-600x400' in specs
+    assert 'max-1600x1600' in specs
+
+
+@pytest.mark.django_db
+def test_card_image_url_cai_para_o_campo_legado(settings, tmp_path):
+    """Sem imagem Wagtail, o card usa o featured_image legado — igual à capa."""
+    settings.MEDIA_ROOT = str(tmp_path)
+
+    site = make_site()
+    article = make_article(site, slug='card-legado')
+    buf = BytesIO()
+    Image.new('RGB', (60, 60), (10, 10, 10)).save(buf, format='PNG')
+    buf.seek(0)
+    article.featured_image.save('legado.png', SimpleUploadedFile('legado.png', buf.getvalue(), 'image/png'), save=True)
+
+    assert article.has_card_image is True
+    assert article.card_image_url == article.featured_image.url
+
+
+@pytest.mark.django_db
+def test_card_image_url_vazio_sem_imagem():
+    """Sem nenhuma imagem, card_image_url é '' e has_card_image é False."""
+    site = make_site()
+    article = make_article(site, slug='card-sem-imagem')
+
+    assert article.card_image_url == ''
+    assert article.has_card_image is False
+
+
+# ── Busca: os sete caminhos continuam achando, sem duplicar ─────────────────
+
+
+@pytest.mark.django_db
+def test_busca_acha_por_titulo_excerpt_conteudo_tag_categoria_e_autor(client, django_user_model):
+    """Trava da reestruturação: os termos que cruzam join saíram para uma subquery.
+
+    Antes, tag/categoria/autor entravam no mesmo OR do título/conteúdo. O join M2M
+    de tags multiplicava as linhas e forçava um `.distinct()`, que o Paginator
+    pagava duas vezes (COUNT + página). Agora são semi-join — o resultado precisa
+    continuar idêntico.
+    """
+    site = make_site()
+    categoria = Category.objects.create(name='Zebrapolitica', slug='zebrapolitica')
+    autor = django_user_model.objects.create_user(
+        username='reporter', password='x', first_name='Girafanome', last_name='Girafasobrenome',
+    )
+
+    por_titulo = make_article(site, slug='por-titulo')
+    por_titulo.title = 'Elefantetitulo em pauta'
+    por_titulo.save()
+
+    por_excerpt = make_article(site, slug='por-excerpt')
+    por_excerpt.excerpt = 'Resumo com Rinoceronteresumo dentro'
+    por_excerpt.save()
+
+    por_conteudo = make_article(site, slug='por-conteudo')
+    por_conteudo.content = 'Corpo com Hipopotamocorpo dentro'
+    por_conteudo.save()
+
+    por_tag = make_article(site, slug='por-tag')
+    tag = Tag.objects.create(name='Leopardotag', slug='leopardotag')
+    por_tag.tags.add(tag)
+    por_tag.save()  # ParentalManyToManyField so persiste no save()
+
+    por_categoria = make_article(site, slug='por-categoria')
+    por_categoria.category = categoria
+    por_categoria.save()
+
+    por_autor = make_article(site, slug='por-autor')
+    por_autor.author = autor
+    por_autor.save()
+
+    casos = [
+        ('Elefantetitulo', por_titulo),
+        ('Rinoceronteresumo', por_excerpt),
+        ('Hipopotamocorpo', por_conteudo),
+        ('Leopardotag', por_tag),
+        ('Zebrapolitica', por_categoria),
+        ('Girafanome', por_autor),
+        ('Girafasobrenome', por_autor),
+    ]
+    for termo, esperado in casos:
+        response = client.get(reverse('news:search'), {'q': termo})
+        assert response.status_code == 200
+        encontrados = list(response.context['page_obj'])
+        assert encontrados == [esperado], f'busca por {termo} devolveu {encontrados}'
+
+
+@pytest.mark.django_db
+def test_busca_nao_duplica_artigo_com_varias_tags_casando(client):
+    """Sem `.distinct()`, o fan-out do join M2M não pode voltar.
+
+    O artigo tem duas tags que casam com o mesmo termo: no desenho antigo isso
+    trazia a mesma linha duas vezes.
+    """
+    site = make_site()
+    art = make_article(site, slug='multi-tag')
+    art.tags.add(Tag.objects.create(name='Pantanalnorte', slug='pantanalnorte'))
+    art.tags.add(Tag.objects.create(name='Pantanalsul', slug='pantanalsul'))
+    art.save()  # ParentalManyToManyField so persiste no save()
+
+    response = client.get(reverse('news:search'), {'q': 'Pantanal'})
+
+    assert list(response.context['page_obj']) == [art]

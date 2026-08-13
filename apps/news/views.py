@@ -3,6 +3,7 @@ from django.contrib.admin.views.decorators import staff_member_required
 from django.contrib.auth import get_user_model
 from django.contrib.auth.decorators import login_required
 from django.contrib.sites.shortcuts import get_current_site
+from django.core.cache import cache
 from django.core.paginator import Paginator
 from django.db.models import F, Q
 from django.http import Http404, HttpResponse
@@ -81,6 +82,10 @@ def article_list(request):
         Article.on_site
         .filter(status=Article.Status.PUBLISHED)
         .select_related('category', 'author', 'featured_image_wagtail')
+        # Sem este prefetch, cada card na grade dispara a sua propria consulta de
+        # Rendition. O Wagtail consome o cache do prefetch direto — ver
+        # _get_prefetched_renditions em wagtail/images/models.py.
+        .prefetch_related('featured_image_wagtail__renditions')
         .prefetch_related('tags')
     )
     categories = Category.objects.all()
@@ -115,13 +120,23 @@ def article_detail(request, slug):
         status=Article.Status.PUBLISHED,
     )
 
-    # Incrementar view_count atomicamente apenas se não foi visto nesta sessão
-    session_key = f'viewed_article_{article.pk}'
-    if not request.session.get(session_key, False):
+    # Incrementa view_count no máximo uma vez por leitor a cada 30 minutos.
+    #
+    # O marcador ficava na sessão, e isso saía caro: com sessão em banco e
+    # SESSION_SAVE_EVERY_REQUEST=True, gravar aqui era o único motivo de tráfego
+    # anônimo tocar `django_session` — o middleware do Django pula sessão VAZIA, mas
+    # não uma que acabou de receber uma chave. Cada crawler passava a criar uma linha
+    # por artigo lido, e para um leitor real o blob crescia uma chave por artigo, sem
+    # nunca ser podado.
+    #
+    # cache.add() devolve False quando a chave já existe: mesma semântica de dedup em
+    # uma chamada só, com expiração automática e sem escrita em sessão.
+    viewer = request.session.session_key or request.META.get('REMOTE_ADDR', '')
+    if cache.add(f'viewed:{article.pk}:{viewer}', True, timeout=1800):
         Article.on_site.filter(pk=article.pk).update(view_count=F('view_count') + 1)
-        request.session[session_key] = True
-
-    article.refresh_from_db(fields=['view_count'])
+        # Em memória em vez de refresh_from_db(): mesmo número exibido, um SELECT a
+        # menos em toda leitura de artigo.
+        article.view_count += 1
 
     # Artigos relacionados (mesma categoria, excluindo atual)
     related_articles = Article.objects.none()
@@ -131,6 +146,7 @@ def article_detail(request, slug):
             .filter(status=Article.Status.PUBLISHED, category=article.category)
             .exclude(pk=article.pk)
             .select_related('category', 'author', 'featured_image_wagtail')
+            .prefetch_related('featured_image_wagtail__renditions')
             .order_by('-published_at')[:3]
         )
 
@@ -163,6 +179,7 @@ def category_detail(request, slug):
         Article.on_site
         .filter(category=category, status=Article.Status.PUBLISHED)
         .select_related('category', 'author', 'featured_image_wagtail')
+        .prefetch_related('featured_image_wagtail__renditions')
         .prefetch_related('tags')
     )
     paginator = Paginator(articles, 12)
@@ -182,6 +199,7 @@ def tag_detail(request, slug):
         Article.on_site
         .filter(tags=tag, status=Article.Status.PUBLISHED)
         .select_related('category', 'author', 'featured_image_wagtail')
+        .prefetch_related('featured_image_wagtail__renditions')
         .prefetch_related('tags')
     )
     paginator = Paginator(articles, 12)
@@ -221,20 +239,33 @@ def article_search(request):
     articles = Article.objects.none()
 
     if query and len(query) >= 3:
-        articles = (
+        # Os termos que cruzam join (tag, categoria, autor) saem do OR principal e
+        # viram subquery. No OR, o join M2M de tags multiplicava as linhas e obrigava
+        # um `.distinct()` — que o banco resolve ordenando o resultado inteiro, e o
+        # Paginator paga isso duas vezes (uma no COUNT, outra na pagina). Como
+        # subquery vira semi-join: sem fan-out, sem distinct, mesmo resultado.
+        por_relacionamento = (
             Article.on_site
             .filter(
-                Q(title__icontains=query) |
-                Q(excerpt__icontains=query) |
-                Q(content__icontains=query) |
                 Q(tags__name__icontains=query) |
                 Q(category__name__icontains=query) |
                 Q(author__first_name__icontains=query) |
                 Q(author__last_name__icontains=query),
                 status=Article.Status.PUBLISHED,
             )
-            .distinct()
+            .values('pk')
+        )
+        articles = (
+            Article.on_site
+            .filter(
+                Q(title__icontains=query) |
+                Q(excerpt__icontains=query) |
+                Q(content__icontains=query) |
+                Q(pk__in=por_relacionamento),
+                status=Article.Status.PUBLISHED,
+            )
             .select_related('category', 'author', 'featured_image_wagtail')
+            .prefetch_related('featured_image_wagtail__renditions')
         )
 
     paginator = Paginator(articles, 12)
@@ -262,6 +293,7 @@ def article_archive(request, year, month=None):
             published_at__year=year,
         )
         .select_related('category', 'author', 'featured_image_wagtail')
+        .prefetch_related('featured_image_wagtail__renditions')
     )
     if month:
         articles = articles.filter(published_at__month=month)
@@ -287,6 +319,7 @@ def article_list_page(request):
         Article.on_site
         .filter(status=Article.Status.PUBLISHED)
         .select_related('category', 'author', 'featured_image_wagtail')
+        .prefetch_related('featured_image_wagtail__renditions')
     )
 
     # Resolve destaques atuais para excluí-los da paginação HTMX
@@ -359,12 +392,14 @@ def user_dashboard(request):
         Article.objects
         .filter(bookmarks__user=user)
         .select_related('category', 'author', 'featured_image_wagtail')
+        .prefetch_related('featured_image_wagtail__renditions')
         .order_by('-bookmarks__created_at')
     )
     liked_articles = (
         Article.objects
         .filter(likes__user=user)
         .select_related('category', 'author', 'featured_image_wagtail')
+        .prefetch_related('featured_image_wagtail__renditions')
         .order_by('-likes__created_at')
     )
     user_comments = user.comments.select_related('article').order_by('-created_at')
