@@ -55,7 +55,7 @@ Use este checklist antes de publicar uma mudança em produção ou reconfigurar 
 
 ## 7. Backups e Manutenção
 
-- [ ] `kellysys-deploy` cria backup gzipado em `/opt/kelly_sys/backups/` antes de alterar containers.
+- [ ] `kellysys-deploy` cria backup gzipado em `/var/backups/kellysys/` antes de alterar containers.
 - [ ] `kellysys-maintenance.timer` está ativo.
 - [ ] Backups antigos são podados com retenção de 30 dias.
 - [ ] Nunca foi executado `docker volume prune` no ambiente de produção.

@@ -59,9 +59,10 @@ cat >/etc/systemd/system/kellysys-approved-deploy.timer <<'EOF'
 Description=Poll GitHub-approved KellySys deploy tag
 
 [Timer]
-OnBootSec=1min
-OnUnitActiveSec=1min
-AccuracySec=15s
+OnBootSec=2min
+OnUnitActiveSec=10min
+AccuracySec=2min
+RandomizedDelaySec=60
 Persistent=true
 
 [Install]
@@ -107,6 +108,38 @@ systemctl enable --now kellysys-maintenance.timer
 systemctl start kellysys-maintenance.service
 ```
 
+## 2.1 Deploy que falha nao reentra em loop
+
+O `kellysys-deploy-approved` grava `/var/lib/kellysys-deploy/last-approved-sha`
+somente depois de o deploy inteiro passar, e o `kellysys-deploy` termina em oito
+healthchecks HTTP/HTTPS. Sem trava, uma falha ali fazia o timer repetir o deploy
+completo (`pg_dump`, `docker build`, `migrate`, `collectstatic`, recriacao de
+containers) a cada tick, indefinidamente — a causa raiz do crescimento de disco e
+CPU tratado em [vps-optimization.md](vps-optimization.md).
+
+Hoje o SHA tentado e gravado em `last-approved-sha.attempt` **antes** do deploy
+comecar. Se o mesmo SHA voltar a ser oferecido, o script aborta com erro em vez de
+tentar de novo:
+
+```bash
+systemctl --failed
+journalctl -u kellysys-approved-deploy.service -n 40 --no-pager
+ls -la /var/lib/kellysys-deploy/
+```
+
+- `last-approved-sha` presente e `.attempt` ausente: ultimo deploy passou.
+- `.attempt` presente: aquele commit falhou. Corrija a causa e rode o deploy a mao:
+
+```bash
+sudo /usr/local/sbin/kellysys-deploy
+```
+
+Retentar o mesmo commit pelo timer e uma decisao deliberada — remova o arquivo:
+
+```bash
+sudo rm -f /var/lib/kellysys-deploy/last-approved-sha.attempt
+```
+
 ## 3. Validacao
 
 Antes de rodar pelo GitHub:
@@ -123,7 +156,7 @@ Resultados esperados:
 - GitHub pede aprovacao do environment `production`.
 - A tag `production-approved` passa a apontar para o commit aprovado.
 - O timer da VPS detecta a tag e executa `/usr/local/sbin/kellysys-deploy-approved`.
-- `/opt/kelly_sys/backups/` recebe um dump PostgreSQL gzipado.
+- `/var/backups/kellysys/` recebe um dump PostgreSQL gzipado.
 - O timer `kellysys-maintenance.timer` esta ativo e a ultima execucao termina sem erro.
 - `docker compose -p kellysys -f docker/docker-compose.prod.yml ps` mostra
   `db`, `web` e `nginx` saudaveis.

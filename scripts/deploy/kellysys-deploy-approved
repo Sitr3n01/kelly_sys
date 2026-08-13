@@ -5,6 +5,7 @@ PROJECT_DIR="/opt/kelly_sys"
 APPROVED_TAG="production-approved"
 STATE_DIR="/var/lib/kellysys-deploy"
 STATE_FILE="${STATE_DIR}/last-approved-sha"
+ATTEMPT_FILE="${STATE_DIR}/last-approved-sha.attempt"
 LOCK_FILE="/var/lock/kellysys-deploy.lock"
 DEPLOY_SCRIPT="/usr/local/sbin/kellysys-deploy"
 
@@ -39,21 +40,38 @@ fi
 approved_sha="$(git rev-parse "refs/tags/${APPROVED_TAG}^{commit}")"
 master_sha="$(git rev-parse origin/master)"
 last_sha="$(cat "${STATE_FILE}" 2>/dev/null || true)"
+attempted_sha="$(cat "${ATTEMPT_FILE}" 2>/dev/null || true)"
 
 if [[ "${approved_sha}" == "${last_sha}" ]]; then
     log "Approved commit already deployed: ${approved_sha}"
     exit 0
 fi
 
+# Trava anti-loop. O STATE_FILE só é gravado DEPOIS de o deploy inteiro passar, e o
+# kellysys-deploy termina em oito healthchecks HTTP/HTTPS. Uma falha lá (Cloudflare,
+# TLS, timing) fazia o timer repetir o deploy completo — pg_dump + gzip, build,
+# migrate, collectstatic, recriação de containers — a cada tick, indefinidamente:
+# a causa raiz do crescimento de disco/CPU documentado em docs/technical/vps-optimization.md.
+# Registrar a tentativa ANTES de deployar troca esse loop silencioso por uma unit
+# falha, visível uma vez em `systemctl --failed`.
+if [[ "${approved_sha}" == "${attempted_sha}" ]]; then
+    fail "deploy of ${approved_sha} already failed; run ${DEPLOY_SCRIPT} manually or remove ${ATTEMPT_FILE} to retry"
+fi
+
 git merge-base --is-ancestor "${approved_sha}" origin/master || fail "${APPROVED_TAG} is not an ancestor of origin/master"
 
 log "Deploying approved commit ${approved_sha} (origin/master ${master_sha})"
+
+install -d -m 0700 "${STATE_DIR}"
+printf '%s\n' "${approved_sha}" > "${ATTEMPT_FILE}"
+chmod 0600 "${ATTEMPT_FILE}"
+
 git checkout --detach "${approved_sha}"
 
 KELLYSYS_SKIP_DEPLOY_LOCK=1 KELLYSYS_SKIP_GIT_UPDATE=1 "${DEPLOY_SCRIPT}"
 
-install -d -m 0700 "${STATE_DIR}"
 printf '%s\n' "${approved_sha}" > "${STATE_FILE}"
 chmod 0600 "${STATE_FILE}"
+rm -f "${ATTEMPT_FILE}"
 
 log "Recorded deployed approved commit ${approved_sha}"

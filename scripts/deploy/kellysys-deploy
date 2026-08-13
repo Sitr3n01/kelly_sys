@@ -4,7 +4,11 @@ set -Eeuo pipefail
 PROJECT_DIR="/opt/kelly_sys"
 COMPOSE_PROJECT="kellysys"
 COMPOSE_FILE="docker/docker-compose.prod.yml"
-BACKUP_DIR="${PROJECT_DIR}/backups"
+# Fora de PROJECT_DIR de propósito: o build do web usa `context: ..` (= PROJECT_DIR),
+# então um dump gravado ali entrava na imagem pelo `COPY . .` do Dockerfile. Cada
+# deploy embutia os dumps dos últimos 30 dias — com e-mails e hashes de senha — e a
+# imagem crescia a cada geração. Ver docker/docker-compose.prod.yml e .dockerignore.
+BACKUP_DIR="${BACKUP_DIR:-/var/backups/kellysys}"
 LOCK_FILE="/var/lock/kellysys-deploy.lock"
 BRANCH="master"
 
