@@ -2816,3 +2816,39 @@ def test_busca_nao_vaza_rascunho_por_nenhum_dos_caminhos(client, django_user_mod
         assert response.status_code == 200
         assert list(response.context['page_obj']) == [], f'rascunho vazou na busca por {termo}'
         assert 'Draftitulo confidencial' not in response.content.decode()
+
+
+@pytest.mark.django_db
+def test_view_count_distingue_leitores_atras_do_mesmo_proxy(client):
+    """Dois visitantes anônimos distintos contam duas vezes, não uma.
+
+    Regressão real: o gunicorn preenche REMOTE_ADDR com o peer da conexão, que
+    atrás do nginx é sempre o container do proxy. Deduplicar por REMOTE_ADDR
+    colapsava todo visitante anônimo numa chave só — o contador subiria no
+    máximo uma vez a cada 30 min por artigo, no site inteiro. O IP real chega em
+    X-Forwarded-For, que o nginx substitui (não anexa).
+    """
+    site = make_site()
+    art = make_article(site, slug='atras-do-proxy')
+    url = art.get_absolute_url()
+
+    # Mesmo REMOTE_ADDR (o proxy), leitores diferentes no X-Forwarded-For.
+    client.get(url, REMOTE_ADDR='172.18.0.5', HTTP_X_FORWARDED_FOR='203.0.113.10')
+    client.get(url, REMOTE_ADDR='172.18.0.5', HTTP_X_FORWARDED_FOR='203.0.113.20')
+
+    art.refresh_from_db()
+    assert art.view_count == 2
+
+
+@pytest.mark.django_db
+def test_view_count_ainda_deduplica_o_mesmo_leitor(client):
+    """O mesmo IP real, repetido, continua contando uma vez só."""
+    site = make_site()
+    art = make_article(site, slug='mesmo-leitor')
+    url = art.get_absolute_url()
+
+    client.get(url, REMOTE_ADDR='172.18.0.5', HTTP_X_FORWARDED_FOR='203.0.113.10')
+    client.get(url, REMOTE_ADDR='172.18.0.5', HTTP_X_FORWARDED_FOR='203.0.113.10')
+
+    art.refresh_from_db()
+    assert art.view_count == 1

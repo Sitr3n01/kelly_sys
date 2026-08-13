@@ -14,6 +14,7 @@ from django.views.decorators.http import require_POST
 
 from apps.accounts.decorators import email_verified_required
 from apps.common.social_section import get_social_section_posts
+from apps.common.turnstile import get_client_ip
 
 from .forms import NewsletterSubscriptionForm
 from .models import Article, ArticleBookmark, ArticleLike, Category, Comment, NewsHomeConfig, NewsletterSubscription, Tag
@@ -131,7 +132,13 @@ def article_detail(request, slug):
     #
     # cache.add() devolve False quando a chave já existe: mesma semântica de dedup em
     # uma chamada só, com expiração automática e sem escrita em sessão.
-    viewer = request.session.session_key or request.META.get('REMOTE_ADDR', '')
+    # get_client_ip e nao REMOTE_ADDR direto: o gunicorn preenche REMOTE_ADDR com o
+    # peer da conexao, que atras do nginx e sempre o container do proxy. Usar REMOTE_ADDR
+    # aqui colapsaria todo visitante anonimo numa chave so, e o contador subiria no
+    # maximo uma vez a cada 30 min por artigo. O nginx SUBSTITUI X-Forwarded-For pelo
+    # $remote_addr ja restaurado do CF-Connecting-IP (docker/nginx/nginx.conf), entao o
+    # header nao e forjavel neste deploy. Mesmo helper que o turnstile usa.
+    viewer = request.session.session_key or get_client_ip(request) or ''
     if cache.add(f'viewed:{article.pk}:{viewer}', True, timeout=1800):
         Article.on_site.filter(pk=article.pk).update(view_count=F('view_count') + 1)
         # Em memória em vez de refresh_from_db(): mesmo número exibido, um SELECT a
