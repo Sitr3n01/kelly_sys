@@ -122,6 +122,105 @@ sudo systemctl enable --now kellysys-maintenance.timer
 sudo systemctl start kellysys-maintenance.service
 ```
 
+## Limpeza preservando os artigos publicados
+
+Artigo publicado vive em dois lugares, e nenhum dos dois pode ser tocado:
+
+- o volume `kellysys_postgres_data` (tabela `news_article`, `cms_media_image`, etc.);
+- o volume `kellysys_media_volume` (os arquivos de imagem em si).
+
+**Nunca execute**, em nenhuma circunstancia:
+
+```bash
+docker volume prune            # apaga postgres_data e media_volume
+docker compose down -v         # idem
+rm -rf /var/lib/docker/volumes/kellysys_postgres_data
+rm -rf /var/lib/docker/volumes/kellysys_media_volume
+```
+
+Medir antes, para saber o que de fato ocupa espaco:
+
+```bash
+cd /opt/kelly_sys
+df -hT && docker system df
+docker run --rm -v kellysys_media_volume:/m alpine:3.20 sh -c 'du -sh /m; du -sh /m/*'
+docker compose -p kellysys -f docker/docker-compose.prod.yml exec -T db sh -lc 'psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" -c "SELECT relname, n_live_tup, pg_size_pretty(pg_total_relation_size(relid)) AS total FROM pg_stat_user_tables ORDER BY pg_total_relation_size(relid) DESC LIMIT 15;"'
+```
+
+### Nivel 1 — descartavel, risco zero
+
+Nada aqui e dado da aplicacao.
+
+```bash
+sudo docker container prune -f
+sudo docker image prune -af      # descarta tambem as imagens que carregavam dumps
+sudo docker builder prune -af
+sudo journalctl --vacuum-time=14d
+sudo rm -f /var/log/social_sync.log   # substituido por journalctl -t kellysys-social
+sudo apt-get clean
+```
+
+### Nivel 2 — dado derivado, regenera sozinho
+
+Renditions sao recortes gerados a partir do original; apagar so obriga a
+regerar sob demanda. Depois da mudanca para `fill-600x400` nos cards, as
+renditions `max-1600x1600` geradas para card viraram peso morto.
+
+```bash
+C="docker compose -p kellysys -f /opt/kelly_sys/docker/docker-compose.prod.yml run --rm --no-deps web python manage.py"
+$C wagtail_update_image_renditions --purge-only
+$C clearsessions
+$C clear_expired_verification_codes
+```
+
+Rode em janela de baixo trafego e aqueca em seguida, para nenhum visitante
+pagar o custo do Pillow:
+
+```bash
+curl -s -o /dev/null https://kellyfarias.com.br/news/
+curl -s -o /dev/null https://komuniki.com.br/
+```
+
+### Nivel 3 — historico, preserva a versao publicada
+
+`purge_revisions` preserva `latest_revision`, publicacao agendada e revisao em
+workflow. O corpo do artigo publicado vive em `news_article`, nao na revisao.
+
+```bash
+$C purge_revisions --days=30
+```
+
+### Nivel 4 — orfaos de midia, somente leitura
+
+Varredura por chave estrangeira **nao basta** neste projeto: o HTML legado de
+`Article.content` e o JSON de `Article.body` embutem `/media/...` sem nenhuma FK
+que rastreie. O comando abaixo cobre os dois casos e **nunca apaga**.
+
+```bash
+$C scan_orphan_media
+```
+
+Ele separa o resultado em dois grupos:
+
+- **RISCO ALTO** — qualquer coisa em `original_images/`, que e onde o Wagtail
+  guarda o ORIGINAL. Apagar um que ainda esteja em uso destroi a regeneracao de
+  todas as renditions daquela imagem. Sai sem linha `rm`, de proposito.
+- **baixo risco** — sai com o `rm` pronto, para conferencia e execucao manual.
+
+Confira antes de remover qualquer coisa. Um `_wVaw5BB` no fim do nome costuma
+ser sobra de reenvio, mas o arquivo sem sufixo pode ser o que esta em uso.
+
+### Recuperar espaco ja liberado no Postgres
+
+`VACUUM (ANALYZE)` (que o `kellysys-maintenance` ja roda) marca espaco como
+reutilizavel, mas nao devolve disco ao SO. `VACUUM FULL` devolve, e trava a
+tabela enquanto roda — so em janela de manutencao, e so se o diagnostico
+mostrar bloat relevante:
+
+```bash
+docker compose -p kellysys -f docker/docker-compose.prod.yml exec -T db sh -lc 'psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" -c "VACUUM FULL wagtailcore_revision;"'
+```
+
 ## Validacao
 
 ```bash

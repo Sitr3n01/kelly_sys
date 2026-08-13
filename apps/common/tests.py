@@ -483,3 +483,86 @@ def test_teto_de_pixels_fica_abaixo_do_default_do_wagtail(settings):
     alocar centenas de MB dentro de um container limitado a 1500M.
     """
     assert settings.WAGTAILIMAGES_MAX_IMAGE_PIXELS < 128 * 1_000_000
+
+
+# ── scan_orphan_media: o HTML legado não tem FK que o rastreie ──────────────
+
+
+def _escreve(media_root, caminho_relativo):
+    destino = media_root / caminho_relativo
+    destino.parent.mkdir(parents=True, exist_ok=True)
+    destino.write_bytes(b'conteudo-de-teste')
+    return destino
+
+
+@pytest.mark.django_db
+def test_scan_orphan_media_nao_marca_arquivo_citado_no_html_legado(settings, tmp_path, current_site):
+    """Imagem referenciada só em Article.content não pode virar órfã.
+
+    É a razão de o comando existir: `content` guarda HTML legado com
+    `<img src="/media/...">` e nenhuma chave estrangeira aponta para esse
+    arquivo. Uma varredura por FK sozinha o apagaria — quebrando a imagem de um
+    artigo publicado.
+    """
+    from io import StringIO
+
+    from django.core.management import call_command
+
+    from apps.news.models import Article
+
+    settings.MEDIA_ROOT = str(tmp_path)
+    _escreve(tmp_path, 'news/articles/citada-no-html.jpg')
+    _escreve(tmp_path, 'media_library/files/ninguem-usa.png')
+
+    Article.objects.create(
+        title='Artigo com imagem embutida', slug='imagem-embutida',
+        content='<p>texto</p><img src="/media/news/articles/citada-no-html.jpg">',
+        site=current_site, status=Article.Status.PUBLISHED,
+    )
+
+    saida = StringIO()
+    call_command('scan_orphan_media', stdout=saida)
+    texto = saida.getvalue()
+
+    assert 'citada-no-html.jpg' not in texto, 'imagem do HTML legado foi marcada como órfã'
+    assert 'ninguem-usa.png' in texto
+    assert 'Referências embutidas em content/body: 1' in texto
+
+
+@pytest.mark.django_db
+def test_scan_orphan_media_marca_original_do_wagtail_como_risco_alto(settings, tmp_path):
+    """Órfão em original_images/ sai como RISCO ALTO, sem linha `rm` pronta.
+
+    É o original do Wagtail: apagar um que ainda esteja em uso destrói a
+    regeneração de todas as renditions daquela imagem.
+    """
+    from io import StringIO
+
+    from django.core.management import call_command
+
+    settings.MEDIA_ROOT = str(tmp_path)
+    _escreve(tmp_path, 'original_images/capa-solta.jpg')
+
+    saida = StringIO()
+    call_command('scan_orphan_media', stdout=saida)
+    texto = saida.getvalue()
+
+    assert 'RISCO ALTO' in texto
+    assert 'capa-solta.jpg' in texto
+    assert "rm '" not in texto, 'original do Wagtail não deve vir com rm pronto'
+
+
+@pytest.mark.django_db
+def test_scan_orphan_media_ignora_dotfiles(settings, tmp_path):
+    """.gitkeep é marcador estrutural, não lixo."""
+    from io import StringIO
+
+    from django.core.management import call_command
+
+    settings.MEDIA_ROOT = str(tmp_path)
+    _escreve(tmp_path, '.gitkeep')
+
+    saida = StringIO()
+    call_command('scan_orphan_media', stdout=saida)
+
+    assert 'Nenhum órfão' in saida.getvalue()
