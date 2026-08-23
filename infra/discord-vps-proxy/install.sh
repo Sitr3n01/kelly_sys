@@ -123,20 +123,23 @@ install_user_and_dirs() {
 }
 
 download_sing_box() {
-  local arch version api asset url tmp exe
+  local arch version asset url tmp exe suffix
   arch="$(map_arch)"
-  log "Resolving latest official sing-box release for linux-${arch}"
-  api="$(curl -fsSL -H 'User-Agent: discord-vps-proxy-installer' https://api.github.com/repos/SagerNet/sing-box/releases/latest)"
-  version="$(printf '%s\n' "${api}" | sed -nE 's/.*"tag_name"[[:space:]]*:[[:space:]]*"v?([^"]+)".*/\1/p' | head -n1)"
-  [ -n "${version}" ] || die "could not parse latest sing-box version"
+  version="${SING_BOX_VERSION:-1.13.19}"
 
-  asset="sing-box-${version}-linux-${arch}.tar.gz"
-  url="$(printf '%s\n' "${api}" | sed -nE 's/.*"browser_download_url"[[:space:]]*:[[:space:]]*"([^"]+)".*/\1/p' | grep -F "/${asset}" | head -n1 || true)"
-  if [ -z "${url}" ]; then
-    asset="sing-box-${version}-linux-${arch}-glibc.tar.gz"
-    url="$(printf '%s\n' "${api}" | sed -nE 's/.*"browser_download_url"[[:space:]]*:[[:space:]]*"([^"]+)".*/\1/p' | grep -F "/${asset}" | head -n1 || true)"
-  fi
-  [ -n "${url}" ] || die "could not find official asset for linux-${arch}"
+  log "Resolving official sing-box ${version} release for linux-${arch}"
+  url=""
+  asset=""
+  for suffix in "" "-glibc" "-musl"; do
+    asset="sing-box-${version}-linux-${arch}${suffix}.tar.gz"
+    url="https://github.com/SagerNet/sing-box/releases/download/v${version}/${asset}"
+    if curl -fsIL --retry 2 -H 'User-Agent: discord-vps-proxy-installer' "${url}" >/dev/null; then
+      break
+    fi
+    url=""
+    asset=""
+  done
+  [ -n "${url}" ] || die "could not find official asset for sing-box ${version} linux-${arch}"
 
   tmp="$(mktemp -d)"
   trap 'rm -rf "${tmp}"' RETURN
@@ -321,4 +324,3 @@ main() {
 }
 
 main "$@"
-
