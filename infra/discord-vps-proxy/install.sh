@@ -117,7 +117,7 @@ install_user_and_dirs() {
   fi
 
   install -d -o root -g root -m 0755 "${INSTALL_DIR}/bin"
-  install -d -o root -g root -m 0750 "${CONFIG_DIR}"
+  install -d -o root -g "${SERVICE_USER}" -m 0750 "${CONFIG_DIR}"
   install -d -o "${SERVICE_USER}" -g "${SERVICE_USER}" -m 0750 "${STATE_DIR}"
   install -d -o "${SERVICE_USER}" -g "${SERVICE_USER}" -m 0750 "${LOG_DIR}"
 }
