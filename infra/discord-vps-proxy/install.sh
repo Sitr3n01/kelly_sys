@@ -142,13 +142,13 @@ download_sing_box() {
   [ -n "${url}" ] || die "could not find official asset for sing-box ${version} linux-${arch}"
 
   tmp="$(mktemp -d)"
-  trap 'rm -rf "${tmp}"' RETURN
   log "Downloading ${asset}"
   curl -fL --retry 3 -H 'User-Agent: discord-vps-proxy-installer' -o "${tmp}/${asset}" "${url}"
   tar -xzf "${tmp}/${asset}" -C "${tmp}"
   exe="$(find "${tmp}" -type f -name sing-box -perm -u+x | head -n1)"
   [ -n "${exe}" ] || die "sing-box executable not found in archive"
   install -o root -g root -m 0755 "${exe}" "${BIN_PATH}"
+  rm -rf "${tmp}"
   "${BIN_PATH}" version
 }
 
